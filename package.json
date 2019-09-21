@@ -1,8 +1,35 @@
 {
-  "name": "Petler-server",
+  "name": "petler-server",
   "version": "1.0.0",
   "description": "Petler-server 4-weeks-project",
   "main": "index.js",
   "repository": "https://github.com/codestates/Petler-server.git",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint 'src/**/*.js' --fix",
+    "format": "prettier-eslint 'server/**/*.{js,json}' --write"
+  },
+  "lint-staged": {
+    "**/*.js": [
+      "eslint --fix",
+      "prettier-eslint --write",
+      "git add"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "dependencies": {
+    "eslint": "^6.4.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-promise": "^4.2.1",
+    "husky": "^3.0.5",
+    "lint-staged": "^9.2.5",
+    "prettier-eslint-cli": "^5.0.0"
+  },
+  "lint": "eslint 'src/**/*.js' --fix",
+  "format": "prettier-eslint 'server/**/*.{js,json}' --write"
 }
