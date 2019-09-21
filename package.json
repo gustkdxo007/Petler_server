@@ -1,0 +1,8 @@
+{
+  "name": "Petler-server",
+  "version": "1.0.0",
+  "description": "Petler-server 4-weeks-project",
+  "main": "index.js",
+  "repository": "https://github.com/codestates/Petler-server.git",
+  "license": "MIT"
+}
