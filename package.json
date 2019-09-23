@@ -6,6 +6,7 @@
   "repository": "https://github.com/codestates/Petler-server.git",
   "license": "MIT",
   "scripts": {
+    "start": "nodemon index.js",
     "lint": "eslint 'src/**/*.js' --fix",
     "format": "prettier-eslint 'server/**/*.{js,json}' --write"
   },
@@ -22,14 +23,26 @@
     }
   },
   "dependencies": {
+    "apollo-server-express": "^2.9.3",
     "eslint": "^6.4.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-promise": "^4.2.1",
+    "express": "^4.17.1",
+    "graphql": "^14.5.7",
     "husky": "^3.0.5",
     "lint-staged": "^9.2.5",
-    "prettier-eslint-cli": "^5.0.0"
+    "mysql2": "^1.7.0",
+    "nodemon": "^1.19.2",
+    "prettier-eslint-cli": "^5.0.0",
+    "sequelize": "^5.19.0",
+    "sequelize-cli": "^5.5.1"
   },
   "lint": "eslint 'src/**/*.js' --fix",
-  "format": "prettier-eslint 'server/**/*.{js,json}' --write"
+  "format": "prettier-eslint 'server/**/*.{js,json}' --write",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-stage-3": "^6.24.1"
+  }
 }
