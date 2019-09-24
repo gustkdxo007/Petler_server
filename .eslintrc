@@ -1,11 +1,22 @@
 {
   "env": {
-    "node": true
+    "node": true,
+    "browser": true,
+    "es6": true
   },
   "extends": "airbnb-base",
   "plugins": ["promise"],
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+
   "rules": {
-    "no-console": "error",
+    "no-console": "warn",
+    "semi": 2,
+    "no-undef": "warn",
     "promise/always-return": "error",
     "promise/no-return-wrap": "error",
     "promise/param-names": "error",
@@ -15,6 +26,16 @@
     "promise/no-promise-in-callback": "error",
     "promise/no-callback-in-promise": "error",
     "promise/no-return-in-finally": "error",
-    "prefer-arrow-callback": "error"
+    "prefer-arrow-callback": "error",
+    "quotes": [
+      2,
+      "double",
+      {
+        "avoidEscape": false
+      }
+    ],
+    "indent": ["error", 2],
+    "implicit-arrow-linebreak": ["error", "beside"],
+    "arrow-body-style": ["error", "always"]
   }
 }

@@ -1,20 +1,21 @@
-const express = require('express');
-const { ApolloServer, gql } = require('apollo-server-express');
+import express from "express";
+import { ApolloServer, gql } from "apollo-server-express";
+import sequelize from "./models";
 
 const PORT = 4000;
 
 const Users = [
   {
-    id: '1',
-    name: 'kim',
+    id: "1",
+    name: "kim",
     age: 34,
-    email: 'hi@gql.com',
+    email: "hi@gql.com",
   },
   {
-    id: '2',
-    name: 'Lee',
+    id: "2",
+    name: "Lee",
     age: 24,
-    email: 'h45@gql.com',
+    email: "h45@gql.com",
   },
 ];
 const typeDefs = gql`
@@ -35,9 +36,13 @@ const typeDefs = gql`
 `;
 const resolvers = {
   Query: {
-    users: () => Users,
+    users: () => {
+      return Users;
+    },
     user: (_, args) => {
-      const result = Users.filter((item) => item.name === args.name);
+      const result = Users.filter((item) => {
+        return item.name === args.name;
+      });
       return result[0];
     },
   },
@@ -53,7 +58,9 @@ const resolvers = {
       return add;
     },
     deleteUser: (_, args) => {
-      const result = Users.filter((user) => user.name === args.name);
+      const result = Users.filter((user) => {
+        return user.name === args.name;
+      });
       Users.splice(Users.indexOf(result), 1);
       return result[0];
     },
@@ -61,6 +68,7 @@ const resolvers = {
 };
 const server = new ApolloServer({ typeDefs, resolvers });
 const app = express();
+sequelize.sequelize.sync();
 server.applyMiddleware({ app });
 
 app.listen(PORT, () => {
