@@ -19,25 +19,13 @@ export default (sequelize, DataTypes) => {
         allowNull: false,
       },
       repeat_day: {
-        type: DataTypes.BOOLEAN, // 다시 보세요
+        type: DataTypes.STRING, // 배열지원안함. 문자열로 다뤄야 할 듯.
         allowNull: true,
-      },
-      channel_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
       },
       is_done: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
-      },
-      author_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      pet_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
       },
     },
     {

@@ -10,10 +10,6 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      user_channel_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
     },
     {
       timestamps: true,

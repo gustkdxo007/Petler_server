@@ -37,7 +37,6 @@ export default (sequelize, DataTypes) => {
       back_color: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: "", // 투두배경색?
       },
       back_img: {
         type: DataTypes.STRING,
