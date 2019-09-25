@@ -2,13 +2,10 @@ export default (sequelize, DataTypes) => {
   return sequelize.define(
     "user_channel",
     {
-      user_id: {
+      id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      channel_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
+        primaryKey: true,
+        autoIncrement: true,
       },
       set_alarm: {
         type: DataTypes.BOOLEAN,

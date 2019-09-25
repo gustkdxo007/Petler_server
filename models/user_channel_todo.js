@@ -2,14 +2,10 @@ export default (sequelize, DataTypes) => {
   return sequelize.define(
     "user_channel_todo",
     {
-      user_channel_id: {
+      id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      todo_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        unique: true,
+        primaryKey: true,
+        autoIncrement: true,
       },
       complete_date: {
         type: DataTypes.DATE,
