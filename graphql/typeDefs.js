@@ -7,6 +7,12 @@ const typeDefs = gql`
     email: String!
     img: String!
   }
+
+  type Token {
+    token: String!
+    user: User!
+  }
+
   input SignupInput {
     email: String!
     name: String!
@@ -16,6 +22,7 @@ const typeDefs = gql`
   type Query {
     user: User!
     users: [User]!
+    login(email: String!, password: String!): Token!
   }
   type Mutation {
     signUp(signupInput: SignupInput): User
