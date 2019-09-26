@@ -1,4 +1,4 @@
-export default (sequelize, DataTypes) => {
+const channel = (sequelize, DataTypes) => {
   return sequelize.define(
     "channel",
     {
@@ -17,3 +17,5 @@ export default (sequelize, DataTypes) => {
     },
   );
 };
+
+export default channel;

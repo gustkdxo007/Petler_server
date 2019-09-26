@@ -1,4 +1,4 @@
-export default (sequelize, DataTypes) => {
+const todo = (sequelize, DataTypes) => {
   return sequelize.define(
     "todo",
     {
@@ -34,3 +34,5 @@ export default (sequelize, DataTypes) => {
     },
   );
 };
+
+export default todo;

@@ -1,4 +1,4 @@
-export default (sequelize, DataTypes) => {
+const pet = (sequelize, DataTypes) => {
   return sequelize.define(
     "pet",
     {
@@ -49,3 +49,5 @@ export default (sequelize, DataTypes) => {
     },
   );
 };
+
+export default pet;

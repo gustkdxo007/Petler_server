@@ -2,23 +2,23 @@ import { gql } from "apollo-server-express";
 
 const typeDefs = gql`
   type User {
+    id: ID!
     name: String!
     email: String!
-    password: String!
     img: String!
   }
   input SignupInput {
     email: String!
-    username: String!
+    name: String!
     password: String!
-    confirmPassword: String!
+    img: String!
   }
   type Query {
     user: User!
     users: [User]!
   }
   type Mutation {
-    signup(signupInput: SignupInput): User!
+    signUp(signupInput: SignupInput): User
   }
 `;
 
