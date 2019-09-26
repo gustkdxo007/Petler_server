@@ -1,4 +1,4 @@
-export default (sequelize, DataTypes) => {
+const user = (sequelize, DataTypes) => {
   return sequelize.define(
     "user",
     {
@@ -12,7 +12,7 @@ export default (sequelize, DataTypes) => {
         unique: true,
       },
       password: {
-        type: DataTypes.STRING(15),
+        type: DataTypes.STRING,
         allowNull: false,
       },
       img: {
@@ -32,3 +32,5 @@ export default (sequelize, DataTypes) => {
     },
   );
 };
+
+export default user;

@@ -1,4 +1,5 @@
-export default (sequelize, DataTypes) => {
+/* eslint-disable camelcase */
+const user_channel = (sequelize, DataTypes) => {
   return sequelize.define(
     "user_channel",
     {
@@ -19,3 +20,5 @@ export default (sequelize, DataTypes) => {
     },
   );
 };
+
+export default user_channel;

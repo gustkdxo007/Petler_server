@@ -1,4 +1,4 @@
-export default (sequelize, DataTypes) => {
+const gallery = (sequelize, DataTypes) => {
   return sequelize.define(
     "gallery",
     {
@@ -17,3 +17,5 @@ export default (sequelize, DataTypes) => {
     },
   );
 };
+
+export default gallery;
