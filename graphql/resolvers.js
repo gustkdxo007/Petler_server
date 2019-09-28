@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import { Op } from "sequelize";
 import models from "../models";
 import hash from "../auth/hash";
 
@@ -18,11 +19,13 @@ const resolvers = {
       //     return console.log(err);
       //   });
     },
-    user: (_, args) => {
-      const result = Users.filter((item) => {
-        return item.name === args.name;
+    user: async (_, { email = "null", id = "null" }) => {
+      const user = await models.user.findOne({
+        where: {
+          [Op.or]: [{ email }, { id }],
+        },
       });
-      return result[0];
+      return user;
     },
     login: async (_, { email, password }) => {
       const user = await models.user.findOne({
