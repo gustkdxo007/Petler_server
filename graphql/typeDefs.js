@@ -69,6 +69,7 @@ const typeDefs = gql`
     deleteChannel(id: ID!): Boolean!
     createPet(petInfo: PetInfo!): Pet!
     updatePet(updatePet: PetInfo!): Boolean!
+    deletePet(id: ID!): String!
   }
 `;
 

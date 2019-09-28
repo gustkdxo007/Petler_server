@@ -159,6 +159,17 @@ const resolvers = {
       }
       return false;
     },
+    deletePet: async (_, { id }) => {
+      const pet = await models.pet.findOne({ where: { id } });
+      if (!pet) {
+        throw new Error("펫이 존재하지 않습니다.");
+      }
+      const value = await models.pet.destroy({ where: { id } });
+      if (!value) {
+        throw new Error("삭제가 실패하였습니다.");
+      }
+      return pet.name;
+    },
   },
 };
 
