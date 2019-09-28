@@ -44,6 +44,15 @@ const resolvers = {
       const token = jwt.sign({ email, valid }, process.env.JWT_SECRET, { expiresIn: "1h" });
       return { token, user };
     },
+    pet: async (_, { id }) => {
+      const pet = await models.pet.findOne({
+        where: { id },
+      });
+      if (!pet) {
+        throw new Error("찾는 pet이 없습니다.");
+      }
+      return pet;
+    },
   },
   Mutation: {
     signUp: async (_, args) => {

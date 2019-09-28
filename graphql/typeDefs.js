@@ -16,7 +16,19 @@ const typeDefs = gql`
     token: String!
     user: User!
   }
-
+  type Pet {
+    id: ID!
+    name: String!
+    birth: String
+    gender: String
+    age: Int
+    type: String
+    typeDetail: String
+    intro: String
+    img: String
+    todoColor: String!
+    cardCover: String
+  }
   input userInfo {
     email: String!
     name: String!
@@ -34,6 +46,7 @@ const typeDefs = gql`
     login(email: String!, password: String!): Token!
     channel(id: ID!): Channel!
     channels: [Channel]!
+    pet(id: ID!): Pet!
   }
   type Mutation {
     signUp(userInfo: userInfo): User!
