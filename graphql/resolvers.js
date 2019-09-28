@@ -120,6 +120,45 @@ const resolvers = {
       });
       return pet;
     },
+    updatePet: async (_, { updatePet }) => {
+      if (!updatePet.id) {
+        throw new Error("pet ID 를 입력해주세요");
+      }
+      await models.pet.update(
+        {
+          name: updatePet.name,
+          birth: updatePet.birth,
+          gender: updatePet.gender,
+          age: updatePet.age,
+          type: updatePet.type,
+          type_detail: updatePet.typeDetail,
+          intro: updatePet.intro,
+          img: updatePet.img,
+          back_color: updatePet.todoColor,
+          back_img: updatePet.cardCover,
+        },
+        { where: { id: updatePet.id } },
+      );
+      const pet = await models.pet.findOne({ where: { id: updatePet.id } });
+      if (!pet) {
+        throw new Error("일치하는 pet이 없습니다");
+      }
+      if (
+        pet.dataValues.name === updatePet.name
+        && pet.dataValues.birth === updatePet.birth
+        && pet.dataValues.gender === updatePet.gender
+        && pet.dataValues.age === updatePet.age
+        && pet.dataValues.type === updatePet.type
+        && pet.dataValues.type_detail === updatePet.typeDetail
+        && pet.dataValues.intro === updatePet.intro
+        && pet.dataValues.img === updatePet.img
+        && pet.dataValues.back_color === updatePet.todoColor
+        && pet.dataValues.back_img === updatePet.cardCover
+      ) {
+        return true;
+      }
+      return false;
+    },
   },
 };
 
