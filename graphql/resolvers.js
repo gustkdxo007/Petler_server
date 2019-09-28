@@ -58,6 +58,14 @@ const resolvers = {
       });
       return newUser;
     },
+    updateUserInfo: async (_, { id, name, img }) => {
+      await models.user.update({ name, img }, { where: { id } });
+      const user = await models.user.findOne({ where: { id } });
+      if (user.dataValues.name === name && user.dataValues.img === img) {
+        return true;
+      }
+      return false;
+    },
   },
 };
 
