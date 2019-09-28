@@ -7,16 +7,24 @@ const typeDefs = gql`
     email: String!
     img: String!
   }
-
+  type Channel {
+    id: ID!
+    name: String!
+    img: String!
+  }
   type Token {
     token: String!
     user: User!
   }
 
-  input SignupInput {
+  input userInfo {
     email: String!
     name: String!
     password: String!
+    img: String!
+  }
+  input channelInfo {
+    name: String!
     img: String!
   }
   type Query {
@@ -24,10 +32,15 @@ const typeDefs = gql`
     user(email: String, id: ID): User!
     users: [User]!
     login(email: String!, password: String!): Token!
+    channel(id: ID!): Channel!
+    channels: [Channel]!
   }
   type Mutation {
-    signUp(signupInput: SignupInput): User!
+    signUp(userInfo: userInfo): User!
     updateUserInfo(id: ID!, name: String!, img: String!): Boolean!
+    createChannel(channelInfo: channelInfo): Channel!
+    updateChannel(id: ID!, name: String!, img: String!): Boolean!
+    deleteChannel(id: ID!): Boolean!
   }
 `;
 
