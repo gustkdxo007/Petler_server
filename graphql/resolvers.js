@@ -101,10 +101,24 @@ const resolvers = {
       if (updateChannel.dataValues.img !== args.img) return false;
       return true;
     },
-
     deleteChannel: async (_, args) => {
       const result = await models.channel.destroy({ where: { id: args.id } });
       return !!result;
+    },
+    createPet: async (_, { petInfo }) => {
+      const pet = await models.pet.create({
+        name: petInfo.name,
+        birth: petInfo.birth,
+        gender: petInfo.gender,
+        age: petInfo.age,
+        type: petInfo.type,
+        type_detail: petInfo.typeDetail,
+        intro: petInfo.intro,
+        img: petInfo.img,
+        back_color: petInfo.todoColor,
+        back_img: petInfo.cardCover,
+      });
+      return pet;
     },
   },
 };
