@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import { Op } from "sequelize";
 import models from "../models";
 import hash from "../auth/hash";
 
@@ -7,22 +8,27 @@ dotenv.config();
 
 const resolvers = {
   Query: {
-    users: () => {
-      // models.user
-      //   .findAll()
-      //   .then((result) => {
-      //     console.log(result);
-      //     return result.json();
-      //   })
-      //   .catch((err) => {
-      //     return console.log(err);
-      //   });
+    users: async () => {
+      const users = await models.user.findAll();
+      return users;
     },
-    user: (_, args) => {
-      const result = Users.filter((item) => {
-        return item.name === args.name;
+    user: async (_, { email = "null", id = "null" }) => {
+      const user = await models.user.findOne({
+        where: {
+          [Op.or]: [{ email }, { id }],
+        },
       });
-      return result[0];
+      return user;
+    },
+    channel: async (_, args) => {
+      const channel = await models.channel.findOne({
+        where: { id: args.id },
+      });
+      return channel;
+    },
+    channels: async () => {
+      const channels = await models.channel.findAll();
+      return channels;
     },
     login: async (_, { email, password }) => {
       const user = await models.user.findOne({
@@ -42,18 +48,54 @@ const resolvers = {
   Mutation: {
     signUp: async (_, args) => {
       const signed = await models.user.findOne({
-        where: { email: args.signupInput.email },
+        where: { email: args.userInfo.email },
       });
       if (signed) {
         throw new Error("이미 가입된 사용자입니다.");
       }
       const newUser = models.user.create({
-        name: args.signupInput.name,
-        email: args.signupInput.email,
-        password: hash(args.signupInput.password),
-        img: args.signupInput.img,
+        name: args.userInfo.name,
+        email: args.userInfo.email,
+        password: hash(args.userInfo.password),
+        img: args.userInfo.img,
       });
       return newUser;
+    },
+    updateUserInfo: async (_, { id, name, img }) => {
+      await models.user.update({ name, img }, { where: { id } });
+      const user = await models.user.findOne({ where: { id } });
+      if (user.dataValues.name === name && user.dataValues.img === img) {
+        return true;
+      }
+      return false;
+    },
+    createChannel: async (_, args) => {
+      const newChannel = await models.channel.create({
+        img: args.channelInfo.img,
+        name: args.channelInfo.name,
+      });
+      return newChannel;
+    },
+    updateChannel: async (_, args) => {
+      await models.channel.update(
+        {
+          img: args.img,
+          name: args.name,
+        },
+        { where: { id: args.id } },
+      );
+      const updateChannel = await models.channel.findOne({
+        where: { id: args.id },
+      });
+
+      if (updateChannel.dataValues.name !== args.name) return false;
+      if (updateChannel.dataValues.img !== args.img) return false;
+      return true;
+    },
+
+    deleteChannel: async (_, args) => {
+      const result = await models.channel.destroy({ where: { id: args.id } });
+      return !!result;
     },
   },
 };
