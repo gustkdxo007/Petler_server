@@ -44,6 +44,15 @@ const resolvers = {
       const token = jwt.sign({ email, valid }, process.env.JWT_SECRET, { expiresIn: "1h" });
       return { token, user };
     },
+    pet: async (_, { id }) => {
+      const pet = await models.pet.findOne({
+        where: { id },
+      });
+      if (!pet) {
+        throw new Error("찾는 pet이 없습니다.");
+      }
+      return pet;
+    },
   },
   Mutation: {
     signUp: async (_, args) => {
@@ -92,10 +101,74 @@ const resolvers = {
       if (updateChannel.dataValues.img !== args.img) return false;
       return true;
     },
-
     deleteChannel: async (_, args) => {
       const result = await models.channel.destroy({ where: { id: args.id } });
       return !!result;
+    },
+    createPet: async (_, { petInfo }) => {
+      const pet = await models.pet.create({
+        name: petInfo.name,
+        birth: petInfo.birth,
+        gender: petInfo.gender,
+        age: petInfo.age,
+        type: petInfo.type,
+        type_detail: petInfo.typeDetail,
+        intro: petInfo.intro,
+        img: petInfo.img,
+        back_color: petInfo.todoColor,
+        back_img: petInfo.cardCover,
+      });
+      return pet;
+    },
+    updatePet: async (_, { updatePet }) => {
+      if (!updatePet.id) {
+        throw new Error("pet ID 를 입력해주세요");
+      }
+      await models.pet.update(
+        {
+          name: updatePet.name,
+          birth: updatePet.birth,
+          gender: updatePet.gender,
+          age: updatePet.age,
+          type: updatePet.type,
+          type_detail: updatePet.typeDetail,
+          intro: updatePet.intro,
+          img: updatePet.img,
+          back_color: updatePet.todoColor,
+          back_img: updatePet.cardCover,
+        },
+        { where: { id: updatePet.id } },
+      );
+      const pet = await models.pet.findOne({ where: { id: updatePet.id } });
+      if (!pet) {
+        throw new Error("일치하는 pet이 없습니다");
+      }
+      if (
+        pet.dataValues.name === updatePet.name
+        && pet.dataValues.birth === updatePet.birth
+        && pet.dataValues.gender === updatePet.gender
+        && pet.dataValues.age === updatePet.age
+        && pet.dataValues.type === updatePet.type
+        && pet.dataValues.type_detail === updatePet.typeDetail
+        && pet.dataValues.intro === updatePet.intro
+        && pet.dataValues.img === updatePet.img
+        && pet.dataValues.back_color === updatePet.todoColor
+        && pet.dataValues.back_img === updatePet.cardCover
+      ) {
+        return true;
+      }
+      return false;
+    },
+    deletePet: async (_, { id }) => {
+      const pet = await models.pet.findOne({ where: { id } });
+      if (!pet) {
+        throw new Error("펫이 존재하지 않습니다.");
+      }
+      const value = await models.pet.destroy({ where: { id } });
+      if (!value) {
+        throw new Error("삭제가 실패하였습니다.");
+      }
+      return pet.name;
     },
   },
 };
