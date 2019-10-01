@@ -53,6 +53,13 @@ const resolvers = {
       }
       return pet;
     },
+    todo: async (_, args) => {
+      const todo = await models.todo.findOne({ where: { id: args.id } });
+      if (!todo) {
+        throw new Error("일치하는 todo가 없습니다");
+      }
+      return todo;
+    },
   },
   Mutation: {
     signUp: async (_, args) => {
@@ -169,6 +176,48 @@ const resolvers = {
         throw new Error("삭제가 실패하였습니다.");
       }
       return pet.name;
+    },
+    createTodo: async (_, { todoInfo }) => {
+      const todo = await models.todo.create({
+        todo: todoInfo.todo,
+        memo: todoInfo.memo,
+        push_date: todoInfo.pushDate,
+        end_date: todoInfo.endDate,
+        repeat_day: todoInfo.repeatDay,
+      });
+      return todo.dataValues;
+    },
+    deleteTodo: async (_, { id }) => {
+      const todo = await models.todo.findOne({ where: { id } });
+      if (!todo) {
+        throw new Error("Todo 가 존재하지 않습니다.");
+      }
+      const value = await models.todo.destroy({ where: { id } });
+
+      if (!value) {
+        throw new Error("삭제를 실패하였습니다.");
+      }
+      return true;
+    },
+    isDoneTodo: async (_, { id }) => {
+      const todo = await models.todo.findOne({ where: { id } });
+      if (!todo) {
+        throw new Error("해당 todo 가 존재하지 않습니다");
+      }
+      if (todo.dataValues.is_done === true) {
+        throw new Error("완료된 todo 입니다");
+      }
+      await models.todo.update(
+        {
+          is_done: true,
+        },
+        { where: { id } },
+      );
+      const isTrue = await models.todo.findOne({ where: { id } });
+      if (isTrue.is_done === true) {
+        return true;
+      }
+      return false;
     },
   },
 };
