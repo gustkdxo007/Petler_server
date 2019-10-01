@@ -8,10 +8,6 @@ dotenv.config();
 
 const resolvers = {
   Query: {
-    users: async () => {
-      const users = await models.user.findAll();
-      return users;
-    },
     user: async (_, { email = "null", id = "null" }) => {
       const user = await models.user.findOne({
         where: {
@@ -26,10 +22,7 @@ const resolvers = {
       });
       return channel;
     },
-    channels: async () => {
-      const channels = await models.channel.findAll();
-      return channels;
-    },
+
     login: async (_, { email, password }) => {
       const user = await models.user.findOne({
         where: { email },
