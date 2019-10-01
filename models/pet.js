@@ -32,13 +32,14 @@ const pet = (sequelize, DataTypes) => {
       },
       img: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
+        defaultValue: "기본사진이 들어가야 합니다",
       },
-      back_color: {
+      todo_color: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      back_img: {
+      card_cover: {
         type: DataTypes.STRING,
         allowNull: true,
       },
