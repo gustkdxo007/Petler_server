@@ -74,24 +74,26 @@ const resolvers = {
     },
   },
   Mutation: {
-    signUp: async (_, args) => {
+    signUp: async (_, { userInfo }) => {
       const signed = await models.user.findOne({
-        where: { email: args.userInfo.email },
+        where: { email: userInfo.email },
       });
       if (signed) {
         throw new Error("이미 가입된 사용자입니다.");
       }
       const newUser = models.user.create({
-        name: args.userInfo.name,
-        email: args.userInfo.email,
-        password: hash(args.userInfo.password),
-        img: args.userInfo.img,
+        name: userInfo.name,
+        email: userInfo.email,
+        password: hash(userInfo.password),
+        img: userInfo.img,
       });
       return newUser;
     },
-    updateUserInfo: async (_, { id, name, img }) => {
-      await models.user.update({ name, img }, { where: { id } });
-      const user = await models.user.findOne({ where: { id } });
+    updateUserInfo: async (_, { token, name, img }) => {
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+      const { dataValues } = await models.user.findOne({ where: { email: decoded.email } });
+      await models.user.update({ name, img }, { where: { id: dataValues.id } });
+      const user = await models.user.findOne({ where: { id: dataValues.id } });
       if (user.dataValues.name === name && user.dataValues.img === img) {
         return true;
       }

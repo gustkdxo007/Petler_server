@@ -67,7 +67,7 @@ const typeDefs = gql`
   }
   type Mutation {
     signUp(userInfo: UserInfo!): User!
-    updateUserInfo(id: ID!, name: String!, img: String!): Boolean!
+    updateUserInfo(token: String!, name: String!, img: String!): Boolean!
     createChannel(channelInfo: ChannelInfo!): Channel!
     updateChannel(channelInfo: ChannelInfo!): Boolean!
     deleteChannel(token: String!, id: ID!): Boolean!
