@@ -18,6 +18,9 @@ const resolvers = {
           [Op.or]: [{ email }, { id }],
         },
       });
+      if (!user) {
+        throw new Error("일치하는 사용자가 없습니다. ");
+      }
       return user;
     },
     channel: async (_, args) => {
@@ -53,6 +56,22 @@ const resolvers = {
       }
       return pet;
     },
+    getUserByToken: async (_, { token }) => {
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+      // console.log(decoded.exp < Date.now().splite(-3));
+      // console.log(decoded.exp);
+      // console.log(Date.now());
+      // if (decoded.exp < Date.now() / 1000) {
+      //   throw new Error("token 만료 기간이 지났습니다.");
+      // }
+      const user = await models.user.findOne({
+        where: { email: decoded.email },
+      });
+      if (!user) {
+        throw new Error("일치하는 유저 정보가 없습니다");
+      }
+      return user;
+    },
   },
   Mutation: {
     signUp: async (_, args) => {
@@ -78,31 +97,36 @@ const resolvers = {
       }
       return false;
     },
-    createChannel: async (_, args) => {
+    createChannel: async (_, { channelInfo }) => {
+      const decoded = await jwt.verify(channelInfo.token, process.env.JWT_SECRET);
+      const { dataValues } = await models.user.findOne({ where: { email: decoded.email } });
       const newChannel = await models.channel.create({
-        img: args.channelInfo.img,
-        name: args.channelInfo.name,
+        img: channelInfo.img,
+        name: channelInfo.name,
       });
+      newChannel.addUser(dataValues.id);
       return newChannel;
     },
-    updateChannel: async (_, args) => {
+    updateChannel: async (_, { channelInfo }) => {
+      await jwt.verify(channelInfo.token, process.env.JWT_SECRET);
       await models.channel.update(
         {
-          img: args.img,
-          name: args.name,
+          img: channelInfo.img,
+          name: channelInfo.name,
         },
-        { where: { id: args.id } },
+        { where: { id: channelInfo.id } },
       );
-      const updateChannel = await models.channel.findOne({
-        where: { id: args.id },
+      const { dataValues } = await models.channel.findOne({
+        where: { id: channelInfo.id },
       });
 
-      if (updateChannel.dataValues.name !== args.name) return false;
-      if (updateChannel.dataValues.img !== args.img) return false;
+      if (dataValues.name !== channelInfo.name) return false;
+      if (dataValues.img !== channelInfo.img) return false;
       return true;
     },
-    deleteChannel: async (_, args) => {
-      const result = await models.channel.destroy({ where: { id: args.id } });
+    deleteChannel: async (_, { token, id }) => {
+      await jwt.verify(token, process.env.JWT_SECRET);
+      const result = await models.channel.destroy({ where: { id } });
       return !!result;
     },
     createPet: async (_, { petInfo }) => {
@@ -174,3 +198,9 @@ const resolvers = {
 };
 
 export default resolvers;
+
+// get method
+// const user = await models.user.findOne({ where: { email: decoded.email } });
+//       const a = await user.getChannels().map(item => {
+//         return item.dataValues.id;
+//       })
