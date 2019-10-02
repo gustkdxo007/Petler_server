@@ -25,7 +25,6 @@ const resolvers = {
       });
       return channel;
     },
-
     login: async (_, { email, password }) => {
       const user = await models.user.findOne({
         where: { email },
@@ -66,6 +65,7 @@ const resolvers = {
         throw new Error("일치하는 유저 정보가 없습니다");
       }
       return user;
+    },
     todo: async (_, args) => {
       const todo = await models.todo.findOne({ where: { id: args.id } });
       if (!todo) {
@@ -79,6 +79,14 @@ const resolvers = {
         throw new Error("일치하는 photo가 없습니다");
       }
       return photo;
+    },
+    confirmPW: async (_, { token, password }) => {
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+      const user = await models.user.findOne({
+        where: { email: decoded.email },
+      });
+      const valid = hash(password);
+      return valid === user.dataValues.password;
     },
   },
   Mutation: {
@@ -236,11 +244,11 @@ const resolvers = {
         where: { id: updateTodoInfo.id },
       });
       if (
-        todo.dataValues.todo === updateTodoInfo.todo &&
-        todo.dataValues.memo === updateTodoInfo.memo &&
+        todo.dataValues.todo === updateTodoInfo.todo
+        && todo.dataValues.memo === updateTodoInfo.memo
         // todo.dataValues.push_date === updateTodoInfo.pushDate &&
         // todo.dataValues.endDate === updateTodoInfo.endDate &&
-        todo.dataValues.repeat_day === updateTodoInfo.repeatDay
+        && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
       ) {
         return true;
       }
@@ -306,6 +314,23 @@ const resolvers = {
         throw new Error("삭제를 실패하였습니다.");
       }
       return true;
+    },
+    updatePassword: async (_, { token, password }) => {
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+      const user = await models.user.findOne({
+        where: { email: decoded.email },
+      });
+      await models.user.update(
+        {
+          password,
+        },
+        { where: { id: user.dataValues.id } },
+      );
+      const { dataValues } = await models.user.findOne({
+        where: { id: user.dataValues.id },
+      });
+      console.log("@", dataValues);
+      return password === dataValues.password;
     },
   },
 };
