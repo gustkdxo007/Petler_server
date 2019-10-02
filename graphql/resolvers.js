@@ -8,10 +8,6 @@ dotenv.config();
 
 const resolvers = {
   Query: {
-    users: async () => {
-      const users = await models.user.findAll();
-      return users;
-    },
     user: async (_, { email = "null", id = "null" }) => {
       const user = await models.user.findOne({
         where: {
@@ -29,10 +25,7 @@ const resolvers = {
       });
       return channel;
     },
-    channels: async () => {
-      const channels = await models.channel.findAll();
-      return channels;
-    },
+
     login: async (_, { email, password }) => {
       const user = await models.user.findOne({
         where: { email },
@@ -44,7 +37,9 @@ const resolvers = {
       if (valid !== user.dataValues.password) {
         throw new Error("비밀번호가 일치하지 않습니다");
       }
-      const token = jwt.sign({ email, valid }, process.env.JWT_SECRET, { expiresIn: "1h" });
+      const token = jwt.sign({ email, valid }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
       return { token, user };
     },
     pet: async (_, { id }) => {
@@ -71,6 +66,19 @@ const resolvers = {
         throw new Error("일치하는 유저 정보가 없습니다");
       }
       return user;
+    todo: async (_, args) => {
+      const todo = await models.todo.findOne({ where: { id: args.id } });
+      if (!todo) {
+        throw new Error("일치하는 todo가 없습니다");
+      }
+      return todo;
+    },
+    photo: async (_, args) => {
+      const photo = await models.gallery.findOne({ where: { id: args.id } });
+      if (!photo) {
+        throw new Error("일치하는 photo가 없습니다");
+      }
+      return photo;
     },
   },
   Mutation: {
@@ -199,6 +207,105 @@ const resolvers = {
         throw new Error("삭제가 실패하였습니다.");
       }
       return pet.name;
+    },
+    createTodo: async (_, { todoInfo }) => {
+      const todo = await models.todo.create({
+        todo: todoInfo.todo,
+        memo: todoInfo.memo,
+        push_date: todoInfo.pushDate,
+        end_date: todoInfo.endDate,
+        repeat_day: todoInfo.repeatDay,
+      });
+      return todo.dataValues;
+    },
+    updateTodo: async (_, { updateTodoInfo }) => {
+      if (!updateTodoInfo.id) {
+        throw new Error("Todo ID 를 입력해주세요");
+      }
+      await models.todo.update(
+        {
+          todo: updateTodoInfo.todo,
+          memo: updateTodoInfo.memo,
+          push_date: updateTodoInfo.pushDate,
+          end_date: updateTodoInfo.endDate,
+          repeat_day: updateTodoInfo.repeatDay,
+        },
+        { where: { id: updateTodoInfo.id } },
+      );
+      const todo = await models.todo.findOne({
+        where: { id: updateTodoInfo.id },
+      });
+      if (
+        todo.dataValues.todo === updateTodoInfo.todo &&
+        todo.dataValues.memo === updateTodoInfo.memo &&
+        // todo.dataValues.push_date === updateTodoInfo.pushDate &&
+        // todo.dataValues.endDate === updateTodoInfo.endDate &&
+        todo.dataValues.repeat_day === updateTodoInfo.repeatDay
+      ) {
+        return true;
+      }
+      return false;
+    },
+    deleteTodo: async (_, { id }) => {
+      const todo = await models.todo.findOne({ where: { id } });
+      if (!todo) {
+        throw new Error("Todo 가 존재하지 않습니다.");
+      }
+      const value = await models.todo.destroy({ where: { id } });
+
+      if (!value) {
+        throw new Error("삭제를 실패하였습니다.");
+      }
+      return true;
+    },
+    isDoneTodo: async (_, { id }) => {
+      const todo = await models.todo.findOne({ where: { id } });
+      if (!todo) {
+        throw new Error("해당 todo 가 존재하지 않습니다");
+      }
+      if (todo.dataValues.is_done === true) {
+        throw new Error("완료된 todo 입니다");
+      }
+      await models.todo.update(
+        {
+          is_done: true,
+        },
+        { where: { id } },
+      );
+      const isTrue = await models.todo.findOne({ where: { id } });
+      if (isTrue.is_done === true) {
+        return true;
+      }
+      return false;
+    },
+    createPhoto: async (_, { img, memo }) => {
+      const photo = await models.gallery.create({ img, memo });
+      return photo;
+    },
+    updatePhoto: async (_, { id, img, memo }) => {
+      await models.gallery.update(
+        {
+          img,
+          memo,
+        },
+        { where: { id } },
+      );
+      const { dataValues } = await models.gallery.findOne({
+        where: { id },
+      });
+      if (dataValues.img === img && dataValues.memo === memo) return true;
+      return false;
+    },
+    deletePhoto: async (_, { id }) => {
+      const photo = await models.gallery.findOne({ where: { id } });
+      if (!photo) {
+        throw new Error("해당 photo 가 존재하지 않습니다.");
+      }
+      const value = await models.gallery.destroy({ where: { id } });
+      if (!value) {
+        throw new Error("삭제를 실패하였습니다.");
+      }
+      return true;
     },
   },
 };
