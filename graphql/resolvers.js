@@ -17,6 +17,10 @@ const resolvers = {
       if (!user) {
         throw new Error("일치하는 사용자가 없습니다. ");
       }
+      const channel = await user.getChannels().map((item) => {
+        return item.dataValues;
+      });
+      user.channel = channel;
       return user;
     },
     channel: async (_, args) => {
@@ -40,7 +44,10 @@ const resolvers = {
       const token = jwt.sign({ email, valid }, process.env.JWT_SECRET, {
         expiresIn: "1h",
       });
-      return { token, user };
+      const channel = await user.getChannels().map((item) => {
+        return item.dataValues;
+      });
+      return { token, user, channel };
     },
     pet: async (_, { id }) => {
       const pet = await models.pet.findOne({
@@ -66,6 +73,7 @@ const resolvers = {
         throw new Error("일치하는 유저 정보가 없습니다");
       }
       return user;
+    },
     todo: async (_, args) => {
       const todo = await models.todo.findOne({ where: { id: args.id } });
       if (!todo) {
@@ -236,11 +244,11 @@ const resolvers = {
         where: { id: updateTodoInfo.id },
       });
       if (
-        todo.dataValues.todo === updateTodoInfo.todo &&
-        todo.dataValues.memo === updateTodoInfo.memo &&
+        todo.dataValues.todo === updateTodoInfo.todo
+        && todo.dataValues.memo === updateTodoInfo.memo
         // todo.dataValues.push_date === updateTodoInfo.pushDate &&
         // todo.dataValues.endDate === updateTodoInfo.endDate &&
-        todo.dataValues.repeat_day === updateTodoInfo.repeatDay
+        && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
       ) {
         return true;
       }
