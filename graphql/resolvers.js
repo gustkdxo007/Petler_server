@@ -180,6 +180,35 @@ const resolvers = {
       });
       return todo.dataValues;
     },
+    updateTodo: async (_, { updateTodoInfo }) => {
+      if (!updateTodoInfo.id) {
+        throw new Error("Todo ID 를 입력해주세요");
+      }
+      await models.todo.update(
+        {
+          todo: updateTodoInfo.todo,
+          memo: updateTodoInfo.memo,
+          push_date: updateTodoInfo.pushDate,
+          end_date: updateTodoInfo.endDate,
+          repeat_day: updateTodoInfo.repeatDay,
+        },
+        { where: { id: updateTodoInfo.id } },
+      );
+      const todo = await models.todo.findOne({
+        where: { id: updateTodoInfo.id },
+      });
+      if (
+        todo.dataValues.id === updateTodoInfo.id
+        && todo.dataValues.todo === updateTodoInfo.todo
+        && todo.dataValues.memo === updateTodoInfo.memo
+        // todo.dataValues.push_date === updateTodoInfo.pushDate &&
+        // todo.dataValues.endDate === updateTodoInfo.endDate &&
+        && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
+      ) {
+        return true;
+      }
+      return false;
+    },
     deleteTodo: async (_, { id }) => {
       const todo = await models.todo.findOne({ where: { id } });
       if (!todo) {
