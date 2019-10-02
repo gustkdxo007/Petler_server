@@ -38,6 +38,11 @@ const typeDefs = gql`
     repeatDay: String!
     isDone: Boolean!
   }
+  type Photo {
+    id: ID!
+    img: String!
+    memo: String
+  }
   input UserInfo {
     email: String!
     name: String!
@@ -83,6 +88,7 @@ const typeDefs = gql`
     channel(id: ID!): Channel!
     pet(id: ID!): Pet!
     todo(id: ID!): Todo!
+    photo(id: ID!): Photo!
   }
   type Mutation {
     signUp(userInfo: UserInfo): User!
@@ -97,6 +103,9 @@ const typeDefs = gql`
     updateTodo(updateTodoInfo: UpdateTodoInfo!): Boolean!
     deleteTodo(id: ID!): Boolean!
     isDoneTodo(id: ID!): Boolean!
+    createPhoto(img: String!, memo: String): Photo
+    updatePhoto(id: ID!, img: String, memo: String): Boolean!
+    deletePhoto(id: ID!): Boolean!
   }
   scalar Date
 `;

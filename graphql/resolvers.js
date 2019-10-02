@@ -53,6 +53,13 @@ const resolvers = {
       }
       return todo;
     },
+    photo: async (_, args) => {
+      const photo = await models.gallery.findOne({ where: { id: args.id } });
+      if (!photo) {
+        throw new Error("일치하는 photo가 없습니다");
+      }
+      return photo;
+    },
   },
   Mutation: {
     signUp: async (_, args) => {
@@ -240,6 +247,53 @@ const resolvers = {
         return true;
       }
       return false;
+    },
+    createPhoto: async (_, { img, memo }) => {
+      const photo = await models.gallery.create({ img, memo });
+      return photo;
+    },
+    updatePhoto: async (_, { id, img, memo }) => {
+      let isTrue = false;
+      const before = await models.gallery.findOne({
+        where: { id },
+      });
+      if (img && img !== before.dataValues.img) {
+        await models.gallery.update(
+          {
+            img,
+          },
+          { where: { id } },
+        );
+      }
+      if (memo && memo !== before.dataValues.memo) {
+        await models.gallery.update(
+          {
+            memo,
+          },
+          { where: { id } },
+        );
+      }
+      const after = await models.gallery.findOne({
+        where: { id },
+      });
+      if (img) {
+        isTrue = after.dataValues.img === img;
+      }
+      if (memo) {
+        isTrue = after.dataValues.memo === memo;
+      }
+      return isTrue;
+    },
+    deletePhoto: async (_, { id }) => {
+      const photo = await models.gallery.findOne({ where: { id } });
+      if (!photo) {
+        throw new Error("해당 photo 가 존재하지 않습니다.");
+      }
+      const value = await models.gallery.destroy({ where: { id } });
+      if (!value) {
+        throw new Error("삭제를 실패하였습니다.");
+      }
+      return true;
     },
   },
 };
