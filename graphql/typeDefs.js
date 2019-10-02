@@ -19,7 +19,6 @@ const typeDefs = gql`
   type Pet {
     id: ID!
     name: String!
-    birth: String
     gender: String
     age: String
     type: String
@@ -42,18 +41,20 @@ const typeDefs = gql`
     img: String
     channelId: ID
   }
+  "create할때는 channelID를 꼭 입력해주시고, update 할때는 petId를 꼭 입력해주세요"
   input PetInfo {
-    id: ID
+    token: String!
+    petId: ID
     name: String!
-    birth: String
     gender: String
     age: String
     type: String
     typeDetail: String
     intro: String
-    img: String
+    img: String!
     todoColor: String!
     cardCover: String
+    channelId: ID
   }
   type Query {
     "user는 email로 찾거나 id로 찾거나 둘 중 하나만 하면 됩니다. 혹시 두개다 입력하게 되면 or 문이 적용되기 때문에 꼭 동일한 유저정보를 넣어야 합니다."
@@ -73,7 +74,7 @@ const typeDefs = gql`
     deleteChannel(token: String!, id: ID!): Boolean!
     createPet(petInfo: PetInfo!): Pet!
     updatePet(updatePet: PetInfo!): Boolean!
-    deletePet(id: ID!): String!
+    deletePet(token: String!, id: ID!): String!
   }
 `;
 

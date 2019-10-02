@@ -6,16 +6,12 @@ const pet = (sequelize, DataTypes) => {
         type: DataTypes.STRING(30),
         allowNull: false,
       },
-      birth: {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
       gender: {
         type: DataTypes.STRING(10),
         allowNull: true,
       },
       age: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: true,
       },
       type: {

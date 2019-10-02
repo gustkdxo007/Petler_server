@@ -110,6 +110,9 @@ const resolvers = {
       return newChannel;
     },
     updateChannel: async (_, { channelInfo }) => {
+      if (!channelInfo.id) {
+        throw new Error("channel ID 를 입력해주세요.");
+      }
       await jwt.verify(channelInfo.token, process.env.JWT_SECRET);
       await models.channel.update(
         {
@@ -132,60 +135,61 @@ const resolvers = {
       return !!result;
     },
     createPet: async (_, { petInfo }) => {
+      if (!petInfo.channelId) {
+        throw new Error("channel ID 를 입력해주세요");
+      }
+      await jwt.verify(petInfo.token, process.env.JWT_SECRET);
       const pet = await models.pet.create({
         name: petInfo.name,
-        birth: petInfo.birth,
         gender: petInfo.gender,
         age: petInfo.age,
         type: petInfo.type,
         type_detail: petInfo.typeDetail,
         intro: petInfo.intro,
         img: petInfo.img,
-        back_color: petInfo.todoColor,
-        back_img: petInfo.cardCover,
+        todo_color: petInfo.todoColor,
+        card_cover: petInfo.cardCover,
+        channel_id: petInfo.channelId,
       });
       return pet;
     },
     updatePet: async (_, { updatePet }) => {
-      if (!updatePet.id) {
+      if (!updatePet.petId) {
         throw new Error("pet ID 를 입력해주세요");
       }
+      await jwt.verify(updatePet.token, process.env.JWT_SECRET);
       await models.pet.update(
         {
           name: updatePet.name,
-          birth: updatePet.birth,
           gender: updatePet.gender,
           age: updatePet.age,
           type: updatePet.type,
           type_detail: updatePet.typeDetail,
           intro: updatePet.intro,
           img: updatePet.img,
-          back_color: updatePet.todoColor,
-          back_img: updatePet.cardCover,
+          todo_color: updatePet.todoColor,
+          card_cover: updatePet.cardCover,
         },
-        { where: { id: updatePet.id } },
+        { where: { id: updatePet.petId } },
       );
-      const pet = await models.pet.findOne({ where: { id: updatePet.id } });
-      if (!pet) {
-        throw new Error("일치하는 pet이 없습니다");
-      }
+      const { dataValues } = await models.pet.findOne({ where: { id: updatePet.petId } });
       if (
-        pet.dataValues.name === updatePet.name
-        && pet.dataValues.birth === updatePet.birth
-        && pet.dataValues.gender === updatePet.gender
-        && pet.dataValues.age === updatePet.age
-        && pet.dataValues.type === updatePet.type
-        && pet.dataValues.type_detail === updatePet.typeDetail
-        && pet.dataValues.intro === updatePet.intro
-        && pet.dataValues.img === updatePet.img
-        && pet.dataValues.back_color === updatePet.todoColor
-        && pet.dataValues.back_img === updatePet.cardCover
+        dataValues.name === updatePet.name
+        && dataValues.gender === updatePet.gender
+        && dataValues.age === updatePet.age
+        && dataValues.type === updatePet.type
+        && dataValues.type_detail === updatePet.typeDetail
+        && dataValues.intro === updatePet.intro
+        && dataValues.img === updatePet.img
+        && dataValues.todo_color === updatePet.todoColor
+        && dataValues.card_cover === updatePet.cardCover
       ) {
         return true;
       }
       return false;
     },
-    deletePet: async (_, { id }) => {
+    deletePet: async (_, { token, id }) => {
+      await jwt.verify(token, process.env.JWT_SECRET);
       const pet = await models.pet.findOne({ where: { id } });
       if (!pet) {
         throw new Error("펫이 존재하지 않습니다.");

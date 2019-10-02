@@ -61,7 +61,7 @@ db.todo.belongsToMany(db.user_channel, {
 // user_channel : todo = 1 : n (작성 관계)
 db.user_channel.hasMany(db.todo, { as: "author_id" });
 db.todo.belongsTo(db.user_channel, {
-  foreignKey: { name: "author_id", allowNull: false },
+  foreignKey: { name: "user_channel_id", allowNull: false },
 });
 
 // user_channel : gallery = 1 : n
