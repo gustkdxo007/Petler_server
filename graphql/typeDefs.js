@@ -10,7 +10,7 @@ const typeDefs = gql`
   type Channel {
     id: ID!
     name: String!
-    img: String!
+    img: String
   }
   type Token {
     token: String!
@@ -19,9 +19,8 @@ const typeDefs = gql`
   type Pet {
     id: ID!
     name: String!
-    birth: String
     gender: String
-    age: Int
+    age: String
     type: String
     typeDetail: String
     intro: String
@@ -49,22 +48,27 @@ const typeDefs = gql`
     password: String!
     img: String!
   }
+  "create할때는 channelID를 null로 입력해서, update할때는 channelID를 꼭 입력해주세요"
   input ChannelInfo {
+    token: String!
     name: String!
-    img: String!
+    img: String
+    channelId: ID
   }
+  "create할때는 channelID를 꼭 입력해주시고, update 할때는 petId를 꼭 입력해주세요"
   input PetInfo {
-    id: ID
+    token: String!
+    petId: ID
     name: String!
-    birth: String
     gender: String
-    age: Int
+    age: String
     type: String
     typeDetail: String
     intro: String
-    img: String
+    img: String!
     todoColor: String!
     cardCover: String
+    channelId: ID
   }
   input TodoInfo {
     todo: String!
@@ -87,18 +91,19 @@ const typeDefs = gql`
     login(email: String!, password: String!): Token!
     channel(id: ID!): Channel!
     pet(id: ID!): Pet!
+    getUserByToken(token: String!): User!
     todo(id: ID!): Todo!
     photo(id: ID!): Photo!
   }
   type Mutation {
-    signUp(userInfo: UserInfo): User!
-    updateUserInfo(id: ID!, name: String!, img: String!): Boolean!
-    createChannel(channelInfo: ChannelInfo): Channel!
-    updateChannel(id: ID!, name: String!, img: String!): Boolean!
-    deleteChannel(id: ID!): Boolean!
+    signUp(userInfo: UserInfo!): User!
+    updateUserInfo(token: String!, name: String!, img: String!): Boolean!
+    createChannel(channelInfo: ChannelInfo!): Channel!
+    updateChannel(channelInfo: ChannelInfo!): Boolean!
+    deleteChannel(token: String!, id: ID!): Boolean!
     createPet(petInfo: PetInfo!): Pet!
     updatePet(updatePet: PetInfo!): Boolean!
-    deletePet(id: ID!): String!
+    deletePet(token: String!, id: ID!): String!
     createTodo(todoInfo: TodoInfo!): Todo!
     updateTodo(updateTodoInfo: UpdateTodoInfo!): Boolean!
     deleteTodo(id: ID!): Boolean!

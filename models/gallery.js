@@ -6,6 +6,10 @@ const gallery = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      thumbnail: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       memo: {
         type: DataTypes.STRING,
         allowNull: true,

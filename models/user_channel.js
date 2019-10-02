@@ -11,7 +11,7 @@ const user_channel = (sequelize, DataTypes) => {
       set_alarm: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: false,
+        defaultValue: true,
       },
     },
     {

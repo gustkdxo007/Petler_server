@@ -6,16 +6,12 @@ const pet = (sequelize, DataTypes) => {
         type: DataTypes.STRING(30),
         allowNull: false,
       },
-      birth: {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
       gender: {
         type: DataTypes.STRING(10),
         allowNull: true,
       },
       age: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: true,
       },
       type: {
@@ -32,13 +28,14 @@ const pet = (sequelize, DataTypes) => {
       },
       img: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
+        defaultValue: "기본사진이 들어가야 합니다",
       },
-      back_color: {
+      todo_color: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      back_img: {
+      card_cover: {
         type: DataTypes.STRING,
         allowNull: true,
       },

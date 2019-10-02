@@ -24,11 +24,11 @@ readdirSync(__dirname)
     db[model.name] = model;
   });
 
-// Object.keys(db).forEach((modelName) => {
-//   if (db[modelName].associate) {
-//     db[modelName].associate(db);
-//   }
-// });
+Object.keys(db).forEach((modelName) => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
@@ -37,31 +37,57 @@ db.sequelize = sequelize;
 // 다 대 다 (belongsToMany)
 
 // user : channel = n : m
-db.user.belongsToMany(db.channel, { through: db.user_channel, foreignKey: "user_id" });
+db.user.belongsToMany(db.channel, {
+  through: db.user_channel,
+  foreignKey: { name: "user_id", allowNull: false },
+});
 // getChannels, setChannels, addChannel, addCehannels 메서드 추가됨
-db.channel.belongsToMany(db.user, { through: db.user_channel, foreignKey: "channel_id" });
+db.channel.belongsToMany(db.user, {
+  through: db.user_channel,
+  foreignKey: { name: "channel_id", allowNull: false },
+});
 // getUsers, setUsers, addUser, addUsers 메서드 추가됨
 
 // uesr_channel : todo = n : m (할당 관계)
 db.user_channel.belongsToMany(db.todo, {
   through: db.user_channel_todo,
-  foreignKey: "user_channel_id",
+  foreignKey: { name: "user_channel_id", allowNull: false },
 });
-db.todo.belongsToMany(db.user_channel, { through: db.user_channel_todo, foreignKey: "todo_id" });
+db.todo.belongsToMany(db.user_channel, {
+  through: db.user_channel_todo,
+  foreignKey: { name: "todo_id", allowNull: false },
+});
 
 // user_channel : todo = 1 : n (작성 관계)
 db.user_channel.hasMany(db.todo, { as: "author_id" });
+db.todo.belongsTo(db.user_channel, {
+  foreignKey: { name: "user_channel_id", allowNull: false },
+});
 
 // user_channel : gallery = 1 : n
 db.user_channel.hasMany(db.gallery); // getGallerys, setGallerys 메서드 추가됨
+db.gallery.belongsTo(db.user_channel, {
+  foreignKey: { name: "user_channel_id", allowNull: false },
+});
 
 // channel : pet = 1 : n
 db.channel.hasMany(db.pet);
-
+db.pet.belongsTo(db.channel, {
+  foreignKey: { name: "channel_id", allowNull: false },
+  onDelete: "CASCADE",
+});
 // channel : todo = 1 : n
 db.channel.hasMany(db.todo);
+db.todo.belongsTo(db.channel, {
+  foreignKey: { name: "channel_id", allowNull: false },
+  onDelete: "CASCADE",
+});
 
 // pet : todo = 1 : n
 db.pet.hasMany(db.todo);
+db.todo.belongsTo(db.pet, {
+  foreignKey: { name: "pet_id", allowNull: false },
+  onDelete: "CASCADE",
+});
 
 export default db;
