@@ -104,7 +104,7 @@ const typeDefs = gql`
     deleteTodo(id: ID!): Boolean!
     isDoneTodo(id: ID!): Boolean!
     createPhoto(img: String!, memo: String): Photo
-    updatePhoto(id: ID!, img: String, memo: String): Boolean!
+    updatePhoto(id: ID!, img: String!, memo: String!): Boolean!
     deletePhoto(id: ID!): Boolean!
   }
   scalar Date

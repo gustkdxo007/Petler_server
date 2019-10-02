@@ -34,7 +34,9 @@ const resolvers = {
       if (valid !== user.dataValues.password) {
         throw new Error("비밀번호가 일치하지 않습니다");
       }
-      const token = jwt.sign({ email, valid }, process.env.JWT_SECRET, { expiresIn: "1h" });
+      const token = jwt.sign({ email, valid }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
       return { token, user };
     },
     pet: async (_, { id }) => {
@@ -151,16 +153,16 @@ const resolvers = {
         throw new Error("일치하는 pet이 없습니다");
       }
       if (
-        pet.dataValues.name === updatePet.name
-        && pet.dataValues.birth === updatePet.birth
-        && pet.dataValues.gender === updatePet.gender
-        && pet.dataValues.age === updatePet.age
-        && pet.dataValues.type === updatePet.type
-        && pet.dataValues.type_detail === updatePet.typeDetail
-        && pet.dataValues.intro === updatePet.intro
-        && pet.dataValues.img === updatePet.img
-        && pet.dataValues.back_color === updatePet.todoColor
-        && pet.dataValues.back_img === updatePet.cardCover
+        pet.dataValues.name === updatePet.name &&
+        pet.dataValues.birth === updatePet.birth &&
+        pet.dataValues.gender === updatePet.gender &&
+        pet.dataValues.age === updatePet.age &&
+        pet.dataValues.type === updatePet.type &&
+        pet.dataValues.type_detail === updatePet.typeDetail &&
+        pet.dataValues.intro === updatePet.intro &&
+        pet.dataValues.img === updatePet.img &&
+        pet.dataValues.back_color === updatePet.todoColor &&
+        pet.dataValues.back_img === updatePet.cardCover
       ) {
         return true;
       }
@@ -205,12 +207,11 @@ const resolvers = {
         where: { id: updateTodoInfo.id },
       });
       if (
-        todo.dataValues.id === updateTodoInfo.id
-        && todo.dataValues.todo === updateTodoInfo.todo
-        && todo.dataValues.memo === updateTodoInfo.memo
+        todo.dataValues.todo === updateTodoInfo.todo &&
+        todo.dataValues.memo === updateTodoInfo.memo &&
         // todo.dataValues.push_date === updateTodoInfo.pushDate &&
         // todo.dataValues.endDate === updateTodoInfo.endDate &&
-        && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
+        todo.dataValues.repeat_day === updateTodoInfo.repeatDay
       ) {
         return true;
       }
@@ -253,36 +254,18 @@ const resolvers = {
       return photo;
     },
     updatePhoto: async (_, { id, img, memo }) => {
-      let isTrue = false;
-      const before = await models.gallery.findOne({
+      await models.gallery.update(
+        {
+          img,
+          memo,
+        },
+        { where: { id } },
+      );
+      const { dataValues } = await models.gallery.findOne({
         where: { id },
       });
-      if (img && img !== before.dataValues.img) {
-        await models.gallery.update(
-          {
-            img,
-          },
-          { where: { id } },
-        );
-      }
-      if (memo && memo !== before.dataValues.memo) {
-        await models.gallery.update(
-          {
-            memo,
-          },
-          { where: { id } },
-        );
-      }
-      const after = await models.gallery.findOne({
-        where: { id },
-      });
-      if (img) {
-        isTrue = after.dataValues.img === img;
-      }
-      if (memo) {
-        isTrue = after.dataValues.memo === memo;
-      }
-      return isTrue;
+      if (dataValues.img === img && dataValues.memo === memo) return true;
+      return false;
     },
     deletePhoto: async (_, { id }) => {
       const photo = await models.gallery.findOne({ where: { id } });
