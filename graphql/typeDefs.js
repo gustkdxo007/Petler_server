@@ -29,6 +29,20 @@ const typeDefs = gql`
     todoColor: String!
     cardCover: String
   }
+  type Todo {
+    id: ID!
+    todo: String!
+    memo: String!
+    pushDate: Date
+    endDate: Date
+    repeatDay: String!
+    isDone: Boolean!
+  }
+  type Photo {
+    id: ID!
+    img: String!
+    memo: String
+  }
   input UserInfo {
     email: String!
     name: String!
@@ -52,14 +66,29 @@ const typeDefs = gql`
     todoColor: String!
     cardCover: String
   }
+  input TodoInfo {
+    todo: String!
+    memo: String!
+    pushDate: Date
+    endDate: String
+    repeatDay: String!
+  }
+  input UpdateTodoInfo {
+    id: ID!
+    todo: String!
+    memo: String!
+    pushDate: Date!
+    endDate: Date!
+    repeatDay: String!
+  }
   type Query {
     "user는 email로 찾거나 id로 찾거나 둘 중 하나만 하면 됩니다. 혹시 두개다 입력하게 되면 or 문이 적용되기 때문에 꼭 동일한 유저정보를 넣어야 합니다."
     user(email: String, id: ID): User!
-    users: [User]!
     login(email: String!, password: String!): Token!
     channel(id: ID!): Channel!
-    channels: [Channel]!
     pet(id: ID!): Pet!
+    todo(id: ID!): Todo!
+    photo(id: ID!): Photo!
   }
   type Mutation {
     signUp(userInfo: UserInfo): User!
@@ -70,7 +99,15 @@ const typeDefs = gql`
     createPet(petInfo: PetInfo!): Pet!
     updatePet(updatePet: PetInfo!): Boolean!
     deletePet(id: ID!): String!
+    createTodo(todoInfo: TodoInfo!): Todo!
+    updateTodo(updateTodoInfo: UpdateTodoInfo!): Boolean!
+    deleteTodo(id: ID!): Boolean!
+    isDoneTodo(id: ID!): Boolean!
+    createPhoto(img: String!, memo: String): Photo
+    updatePhoto(id: ID!, img: String!, memo: String!): Boolean!
+    deletePhoto(id: ID!): Boolean!
   }
+  scalar Date
 `;
 
 export default typeDefs;
