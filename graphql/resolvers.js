@@ -320,17 +320,22 @@ const resolvers = {
       const user = await models.user.findOne({
         where: { email: decoded.email },
       });
+      console.log("user", user);
       await models.user.update(
         {
-          password,
+          password: hash(password),
         },
         { where: { id: user.dataValues.id } },
       );
       const { dataValues } = await models.user.findOne({
         where: { id: user.dataValues.id },
       });
-      console.log("@", dataValues);
-      return password === dataValues.password;
+      console.log("@dataValues", dataValues);
+      console.log(
+        "@@hash(password) === dataValues.password",
+        hash(password) === dataValues.password,
+      );
+      return hash(password) === dataValues.password;
     },
   },
 };
