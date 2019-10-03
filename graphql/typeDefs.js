@@ -6,6 +6,7 @@ const typeDefs = gql`
     name: String!
     email: String!
     img: String!
+    channel: [Channel!]!
   }
   type Channel {
     id: ID!
@@ -15,6 +16,7 @@ const typeDefs = gql`
   type Token {
     token: String!
     user: User!
+    channel: [Channel!]!
   }
   type Pet {
     id: ID!
