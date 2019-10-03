@@ -317,24 +317,15 @@ const resolvers = {
     },
     updatePassword: async (_, { token, password }) => {
       const decoded = await jwt.verify(token, process.env.JWT_SECRET);
-      const user = await models.user.findOne({
-        where: { email: decoded.email },
-      });
-      console.log("user", user);
       await models.user.update(
         {
           password: hash(password),
         },
-        { where: { id: user.dataValues.id } },
+        { where: { email: decoded.email } },
       );
       const { dataValues } = await models.user.findOne({
-        where: { id: user.dataValues.id },
+        where: { email: decoded.email },
       });
-      console.log("@dataValues", dataValues);
-      console.log(
-        "@@hash(password) === dataValues.password",
-        hash(password) === dataValues.password,
-      );
       return hash(password) === dataValues.password;
     },
   },
