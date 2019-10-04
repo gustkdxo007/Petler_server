@@ -324,6 +324,11 @@ const resolvers = {
       }
       return isTrue.is_done;
     },
+    addUserToChannel: async (_, { token, channelId }) => {
+      const { email } = await jwt.verify(token, process.env.JWT_SECRET);
+      const user = await models.user.findOne({ where: { email } });
+      await user.addChannel(channelId);
+    },
     createPhoto: async (_, { img, memo }) => {
       const photo = await models.gallery.create({ img, memo });
       return photo;

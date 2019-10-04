@@ -111,6 +111,7 @@ const typeDefs = gql`
     createPhoto(img: String!, memo: String): Photo
     updatePhoto(id: ID!, img: String!, memo: String!): Boolean!
     deletePhoto(id: ID!): Boolean!
+    addUserToChannel(token: String!, channelId: ID!): User
   }
   scalar Date
 `;
