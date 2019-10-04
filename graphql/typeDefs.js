@@ -96,6 +96,7 @@ const typeDefs = gql`
     getUserByToken(token: String!): User!
     todo(id: ID!): Todo!
     photo(id: ID!): Photo!
+    confirmPW(token: String!, password: String!): Boolean!
   }
   type Mutation {
     signUp(userInfo: UserInfo!): User!
@@ -113,6 +114,7 @@ const typeDefs = gql`
     createPhoto(img: String!, memo: String): Photo
     updatePhoto(id: ID!, img: String!, memo: String!): Boolean!
     deletePhoto(id: ID!): Boolean!
+    updatePassword(token: String!, password: String!): Boolean!
   }
   scalar Date
 `;
