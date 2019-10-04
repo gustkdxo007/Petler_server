@@ -239,9 +239,8 @@ const resolvers = {
       return todo;
     },
     updateTodo: async (_, { updateTodoInfo }) => {
-      if (!updateTodoInfo.id) {
-        throw new Error("Todo ID 를 입력해주세요");
-      }
+      if (!updateTodoInfo.todoId) throw new Error("Todo ID 를 입력해주세요");
+      await jwt.verify(updateTodoInfo.token, process.env.JWT_SECRET);
       await models.todo.update(
         {
           todo: updateTodoInfo.todo,
@@ -249,24 +248,35 @@ const resolvers = {
           push_date: updateTodoInfo.pushDate,
           end_date: updateTodoInfo.endDate,
           repeat_day: updateTodoInfo.repeatDay,
+          pet_id: updateTodoInfo.petId,
         },
-        { where: { id: updateTodoInfo.id } },
+        { where: { id: updateTodoInfo.todoId } },
       );
       const todo = await models.todo.findOne({
-        where: { id: updateTodoInfo.id },
+        where: { id: updateTodoInfo.todoId },
       });
+      const assinged = await todo.getUser_channels().map((item) => {
+        return item.dataValues.id;
+      });
+      if (assinged.join() !== updateTodoInfo.assignedId) {
+        await models.user_channel_todo.destroy({ where: { todo_id: updateTodoInfo.todoId } });
+        updateTodoInfo.assignedId.split(",").forEach((item) => {
+          todo.addUser_channel(item);
+        });
+      }
       if (
         todo.dataValues.todo === updateTodoInfo.todo
         && todo.dataValues.memo === updateTodoInfo.memo
         // todo.dataValues.push_date === updateTodoInfo.pushDate &&
-        // todo.dataValues.endDate === updateTodoInfo.endDate &&
+        // todo.dataValues.end_date === updateTodoInfo.endDate &&
         && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
       ) {
         return true;
       }
       return false;
     },
-    deleteTodo: async (_, { id }) => {
+    deleteTodo: async (_, { token, id }) => {
+      await jwt.verify(token, process.env.JWT_SECRET);
       const todo = await models.todo.findOne({ where: { id } });
       if (!todo) {
         throw new Error("Todo 가 존재하지 않습니다.");
