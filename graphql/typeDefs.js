@@ -94,6 +94,7 @@ const typeDefs = gql`
     getUserByToken(token: String!): User!
     todo(id: ID!): Todo!
     photo(id: ID!): Photo!
+    confirmPW(token: String!, password: String!): Boolean!
   }
   type Mutation {
     signUp(userInfo: UserInfo!): User!
@@ -112,6 +113,7 @@ const typeDefs = gql`
     updatePhoto(id: ID!, img: String!, memo: String!): Boolean!
     deletePhoto(id: ID!): Boolean!
     addUserToChannel(token: String!, channelId: ID!): User
+    updatePassword(token: String!, password: String!): Boolean!
   }
   scalar Date
 `;

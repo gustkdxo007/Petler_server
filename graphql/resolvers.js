@@ -26,7 +26,6 @@ const resolvers = {
       });
       return channel;
     },
-
     login: async (_, { email, password }) => {
       const user = await models.user.findOne({
         where: { email },
@@ -84,6 +83,14 @@ const resolvers = {
         throw new Error("일치하는 photo가 없습니다");
       }
       return photo;
+    },
+    confirmPW: async (_, { token, password }) => {
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+      const user = await models.user.findOne({
+        where: { email: decoded.email },
+      });
+      const valid = hash(password);
+      return valid === user.dataValues.password;
     },
   },
   Mutation: {
@@ -357,6 +364,19 @@ const resolvers = {
         throw new Error("삭제를 실패하였습니다.");
       }
       return true;
+    },
+    updatePassword: async (_, { token, password }) => {
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+      await models.user.update(
+        {
+          password: hash(password),
+        },
+        { where: { email: decoded.email } },
+      );
+      const { dataValues } = await models.user.findOne({
+        where: { email: decoded.email },
+      });
+      return hash(password) === dataValues.password;
     },
   },
 };
