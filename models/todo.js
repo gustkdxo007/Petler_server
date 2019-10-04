@@ -16,7 +16,7 @@ const todo = (sequelize, DataTypes) => {
       },
       end_date: {
         type: DataTypes.DATE,
-        allowNull: false,
+        allowNull: true,
       },
       repeat_day: {
         type: DataTypes.STRING, // 배열지원안함. 문자열로 다뤄야 할 듯.

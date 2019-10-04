@@ -33,10 +33,10 @@ const typeDefs = gql`
   type Todo {
     id: ID!
     todo: String!
-    memo: String!
+    memo: String
     pushDate: Date
-    endDate: Date
-    repeatDay: String!
+    endDate: Date!
+    repeatDay: String
     isDone: Boolean!
   }
   type Photo {
@@ -72,12 +72,18 @@ const typeDefs = gql`
     cardCover: String
     channelId: ID
   }
+  "create할때는 channelID를 꼭 입력해주시고, update 할때는 todoId를 꼭 입력해주세요"
   input TodoInfo {
+    token: String!
+    todoId: ID
     todo: String!
-    memo: String!
+    memo: String
     pushDate: Date
-    endDate: String
-    repeatDay: String!
+    endDate: Date
+    repeatDay: String
+    petId: ID!
+    channelId: ID
+    assignedId: ID!
   }
   input UpdateTodoInfo {
     id: ID!

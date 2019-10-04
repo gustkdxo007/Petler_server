@@ -214,14 +214,29 @@ const resolvers = {
       return pet.name;
     },
     createTodo: async (_, { todoInfo }) => {
+      if (!todoInfo.channelId) throw new Error("channel ID 를 입력해주세요");
+      const { email } = await jwt.verify(todoInfo.token, process.env.JWT_SECRET);
+      const user = await models.user.findOne({ where: { email } });
+      const channelByUser = await user.getChannels().filter((item) => {
+        return `${item.dataValues.id}` === todoInfo.channelId;
+      });
+      const channelIdByUser = channelByUser[0].dataValues.user_channel.dataValues.id;
       const todo = await models.todo.create({
         todo: todoInfo.todo,
         memo: todoInfo.memo,
         push_date: todoInfo.pushDate,
         end_date: todoInfo.endDate,
         repeat_day: todoInfo.repeatDay,
+        pet_id: todoInfo.petId,
+        channel_id: todoInfo.channelId,
+        user_channel_id: channelIdByUser,
       });
-      return todo.dataValues;
+
+      todoInfo.assignedId.split(",").forEach((item) => {
+        todo.addUser_channel(item);
+      });
+      // user_channel에 존재하지 않은 값이 들어가면 서버에서는 오류를 띄우는데 투두 테이블에는 추가가 된다. 그걸 막고 싶은데 방법이 없을까?
+      return todo;
     },
     updateTodo: async (_, { updateTodoInfo }) => {
       if (!updateTodoInfo.id) {
