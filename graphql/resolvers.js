@@ -288,25 +288,41 @@ const resolvers = {
       }
       return true;
     },
-    isDoneTodo: async (_, { id }) => {
+    isDoneTodo: async (_, { token, id }) => {
+      const { email } = await jwt.verify(token, process.env.JWT_SECRET);
+      const { dataValues } = await models.user.findOne({ where: { email } });
+
       const todo = await models.todo.findOne({ where: { id } });
       if (!todo) {
         throw new Error("해당 todo 가 존재하지 않습니다");
       }
-      if (todo.dataValues.is_done === true) {
-        throw new Error("완료된 todo 입니다");
-      }
       await models.todo.update(
         {
-          is_done: true,
+          is_done: !todo.is_done,
         },
         { where: { id } },
       );
+      const userChannelByTodo = await todo.getUser_channels().filter((item) => {
+        return item.dataValues.user_id === dataValues.id;
+      });
       const isTrue = await models.todo.findOne({ where: { id } });
-      if (isTrue.is_done === true) {
-        return true;
+      if (userChannelByTodo.length === 0) {
+        await models.user_channel_todo.update({ complete_date: null }, { where: { todo_id: id } });
+        const userChannelId = await models.user_channel.findOne({
+          where: { user_id: dataValues.id, channel_id: isTrue.channelId },
+        });
+        await todo.addUser_channel(userChannelId.dataValues.id, {
+          through: { complete_date: isTrue.is_done ? new Date() : null },
+        });
+      } else {
+        await models.user_channel_todo.update({ complete_date: null }, { where: { todo_id: id } });
+        const userChannelTodoId = userChannelByTodo[0].dataValues.user_channel_todo.dataValues.id;
+        await models.user_channel_todo.update(
+          { complete_date: isTrue.is_done ? new Date() : null },
+          { where: { id: userChannelTodoId } },
+        );
       }
-      return false;
+      return isTrue.is_done;
     },
     createPhoto: async (_, { img, memo }) => {
       const photo = await models.gallery.create({ img, memo });

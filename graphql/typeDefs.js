@@ -107,7 +107,7 @@ const typeDefs = gql`
     createTodo(todoInfo: TodoInfo!): Todo!
     updateTodo(updateTodoInfo: TodoInfo!): Boolean!
     deleteTodo(token: String!, id: ID!): Boolean!
-    isDoneTodo(id: ID!): Boolean!
+    isDoneTodo(token: String!, id: ID!): Boolean!
     createPhoto(img: String!, memo: String): Photo
     updatePhoto(id: ID!, img: String!, memo: String!): Boolean!
     deletePhoto(id: ID!): Boolean!
