@@ -24,20 +24,20 @@ const typeDefs = gql`
     gender: String
     age: String
     type: String
-    typeDetail: String
+    type_detail: String
     intro: String
-    img: String
-    todoColor: String!
-    cardCover: String
+    img: String!
+    todo_color: String!
+    card_cover: String
   }
   type Todo {
     id: ID!
     todo: String!
     memo: String
-    pushDate: Date
-    endDate: Date!
-    repeatDay: String
-    isDone: Boolean!
+    push_date: Date
+    end_date: Date
+    repeat_day: String
+    is_done: Boolean!
   }
   type Photo {
     id: ID!
@@ -95,6 +95,7 @@ const typeDefs = gql`
     todo(id: ID!): Todo!
     photo(id: ID!): Photo!
     confirmPW(token: String!, password: String!): Boolean!
+    checkEmail(email: String!): String
   }
   type Mutation {
     signUp(userInfo: UserInfo!): User!
@@ -112,7 +113,7 @@ const typeDefs = gql`
     createPhoto(img: String!, memo: String): Photo
     updatePhoto(id: ID!, img: String!, memo: String!): Boolean!
     deletePhoto(id: ID!): Boolean!
-    addUserToChannel(token: String!, channelId: ID!): User
+    addUserToChannel(token: String!, email: String!, channelId: ID!): String!
     updatePassword(token: String!, password: String!): Boolean!
   }
   scalar Date

@@ -92,6 +92,11 @@ const resolvers = {
       const valid = hash(password);
       return valid === user.dataValues.password;
     },
+    checkEmail: async (_, { email }) => {
+      const user = await models.user.findOne({ where: { email } });
+      if (user) return user.email;
+      return user;
+    },
   },
   Mutation: {
     signUp: async (_, { userInfo }) => {
@@ -331,10 +336,14 @@ const resolvers = {
       }
       return isTrue.is_done;
     },
-    addUserToChannel: async (_, { token, channelId }) => {
-      const { email } = await jwt.verify(token, process.env.JWT_SECRET);
-      const user = await models.user.findOne({ where: { email } });
-      await user.addChannel(channelId);
+    addUserToChannel: async (_, { token, email, channelId }) => {
+      await jwt.verify(token, process.env.JWT_SECRET);
+      const invitedUser = await models.user.findOne({ where: { email } });
+      if (!invitedUser) {
+        throw new Error("초대가능한 유저가 아닙니다.");
+      }
+      await invitedUser.addChannel(channelId);
+      return email;
     },
     createPhoto: async (_, { img, memo }) => {
       const photo = await models.gallery.create({ img, memo });
@@ -382,9 +391,3 @@ const resolvers = {
 };
 
 export default resolvers;
-
-// get method
-// const user = await models.user.findOne({ where: { email: decoded.email } });
-//       const a = await user.getChannels().map(item => {
-//         return item.dataValues.id;
-//       })
