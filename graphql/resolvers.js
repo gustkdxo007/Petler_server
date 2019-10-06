@@ -1,3 +1,4 @@
+import { PubSub, withFilter } from "apollo-server-express";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
@@ -5,6 +6,7 @@ import models from "../models";
 import hash from "../auth/hash";
 
 dotenv.config();
+const pubSub = new PubSub();
 
 const resolvers = {
   Query: {
@@ -92,6 +94,11 @@ const resolvers = {
       const valid = hash(password);
       return valid === user.dataValues.password;
     },
+    checkEmail: async (_, { email }) => {
+      const user = await models.user.findOne({ where: { email } });
+      if (user) return user.email;
+      return user;
+    },
   },
   Mutation: {
     signUp: async (_, { userInfo }) => {
@@ -130,7 +137,7 @@ const resolvers = {
       return newChannel;
     },
     updateChannel: async (_, { channelInfo }) => {
-      if (!channelInfo.id) {
+      if (!channelInfo.channelId) {
         throw new Error("channel ID 를 입력해주세요.");
       }
       await jwt.verify(channelInfo.token, process.env.JWT_SECRET);
@@ -139,10 +146,10 @@ const resolvers = {
           img: channelInfo.img,
           name: channelInfo.name,
         },
-        { where: { id: channelInfo.id } },
+        { where: { id: channelInfo.channelId } },
       );
       const { dataValues } = await models.channel.findOne({
-        where: { id: channelInfo.id },
+        where: { id: channelInfo.channelId },
       });
 
       if (dataValues.name !== channelInfo.name) return false;
@@ -242,6 +249,11 @@ const resolvers = {
       todoInfo.assignedId.split(",").forEach((item) => {
         todo.addUser_channel(item);
       });
+      if (todo) {
+        pubSub.publish("TODO", {
+          todo: { mutation: "CREATE_TODO", channelId: todo.channel_id },
+        });
+      }
       // user_channel에 존재하지 않은 값이 들어가면 서버에서는 오류를 띄우는데 투두 테이블에는 추가가 된다. 그걸 막고 싶은데 방법이 없을까?
       return todo;
     },
@@ -277,7 +289,11 @@ const resolvers = {
         // todo.dataValues.push_date === updateTodoInfo.pushDate &&
         // todo.dataValues.end_date === updateTodoInfo.endDate &&
         && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
+        && `${todo.dataValues.pet_id}` === updateTodoInfo.petId
       ) {
+        pubSub.publish("TODO", {
+          todo: { mutation: "UPDATE_TODO", channelId: todo.dataValues.channel_id },
+        });
         return true;
       }
       return false;
@@ -293,6 +309,9 @@ const resolvers = {
       if (!value) {
         throw new Error("삭제를 실패하였습니다.");
       }
+      pubSub.publish("TODO", {
+        todo: { mutation: "DELETE_TODO", channelId: todo.dataValues.channel_id },
+      });
       return true;
     },
     isDoneTodo: async (_, { token, id }) => {
@@ -329,12 +348,19 @@ const resolvers = {
           { where: { id: userChannelTodoId } },
         );
       }
+      pubSub.publish("TODO", {
+        todo: { mutation: "IS_DONE_TODO", channelId: todo.dataValues.channel_id },
+      });
       return isTrue.is_done;
     },
-    addUserToChannel: async (_, { token, channelId }) => {
-      const { email } = await jwt.verify(token, process.env.JWT_SECRET);
-      const user = await models.user.findOne({ where: { email } });
-      await user.addChannel(channelId);
+    addUserToChannel: async (_, { token, email, channelId }) => {
+      await jwt.verify(token, process.env.JWT_SECRET);
+      const invitedUser = await models.user.findOne({ where: { email } });
+      if (!invitedUser) {
+        throw new Error("초대가능한 유저가 아닙니다.");
+      }
+      await invitedUser.addChannel(channelId);
+      return email;
     },
     createPhoto: async (_, { img, memo }) => {
       const photo = await models.gallery.create({ img, memo });
@@ -378,13 +404,32 @@ const resolvers = {
       });
       return hash(password) === dataValues.password;
     },
+    dismissUser: async (_, { token, dismissId, channelId }) => {
+      await jwt.verify(token, process.env.JWT_SECRET);
+      const dismiss = await models.user_channel.destroy({
+        where: { user_id: dismissId, channel_id: channelId },
+      });
+      if (dismiss) return true;
+      return false;
+    },
+  },
+  Subscription: {
+    todo: {
+      subscribe: withFilter(
+        () => {
+          return pubSub.asyncIterator("TODO");
+        },
+        (payload, variables) => {
+          return `${payload.todo.channelId}` === variables.channelId;
+        },
+      ),
+    },
+    // todo: {
+    //   subscribe: () => {
+    //     return pubSub.asyncIterator(["TODO"]);
+    //   },
+    // },
   },
 };
 
 export default resolvers;
-
-// get method
-// const user = await models.user.findOne({ where: { email: decoded.email } });
-//       const a = await user.getChannels().map(item => {
-//         return item.dataValues.id;
-//       })
