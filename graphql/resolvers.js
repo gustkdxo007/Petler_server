@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-import { Op } from "sequelize";
 import models from "../models";
 import hash from "../auth/hash";
 
@@ -8,23 +7,12 @@ dotenv.config();
 
 const resolvers = {
   Query: {
-    user: async (_, { email = "null", id = "null" }) => {
+    user: async (_, { token }) => {
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
       const user = await models.user.findOne({
-        where: {
-          [Op.or]: [{ email }, { id }],
-        },
+        where: { email: decoded.email },
       });
-      const channel = await user.getChannels().map((item) => {
-        return item.dataValues;
-      });
-      user.channel = channel;
       return user;
-    },
-    channel: async (_, args) => {
-      const channel = await models.channel.findOne({
-        where: { id: args.id },
-      });
-      return channel;
     },
     login: async (_, { email, password }) => {
       const user = await models.user.findOne({
@@ -54,29 +42,6 @@ const resolvers = {
       }
       return pet;
     },
-    getUserByToken: async (_, { token }) => {
-      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
-      // console.log(decoded.exp < Date.now().splite(-3));
-      // console.log(decoded.exp);
-      // console.log(Date.now());
-      // if (decoded.exp < Date.now() / 1000) {
-      //   throw new Error("token 만료 기간이 지났습니다.");
-      // }
-      const user = await models.user.findOne({
-        where: { email: decoded.email },
-      });
-      if (!user) {
-        throw new Error("일치하는 유저 정보가 없습니다");
-      }
-      return user;
-    },
-    todo: async (_, args) => {
-      const todo = await models.todo.findOne({ where: { id: args.id } });
-      if (!todo) {
-        throw new Error("일치하는 todo가 없습니다");
-      }
-      return todo;
-    },
     photo: async (_, args) => {
       const photo = await models.gallery.findOne({ where: { id: args.id } });
       if (!photo) {
@@ -91,6 +56,58 @@ const resolvers = {
       });
       const valid = hash(password);
       return valid === user.dataValues.password;
+    },
+  },
+  User: {
+    channels: async (user, { id }) => {
+      const channels = await user.getChannels();
+      if (id) {
+        return channels.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return channels;
+    },
+  },
+  Channel: {
+    users: async (channel, { id }) => {
+      const users = await channel.getUsers();
+      if (id) {
+        return users.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return users;
+    },
+    pets: async (channel, { id }) => {
+      const pets = await channel.getPets();
+      console.log("PETS", pets);
+      if (id) {
+        return pets.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return pets;
+    },
+    todos: async (channel, { id }) => {
+      const todos = await channel.getTodos();
+      if (id) {
+        return todos.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return todos;
+    },
+  },
+  Pet: {
+    todos: async (pet, { id }) => {
+      const todos = await pet.getTodos();
+      if (id) {
+        return todos.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return todos;
     },
   },
   Mutation: {
@@ -111,7 +128,9 @@ const resolvers = {
     },
     updateUserInfo: async (_, { token, name, img }) => {
       const decoded = await jwt.verify(token, process.env.JWT_SECRET);
-      const { dataValues } = await models.user.findOne({ where: { email: decoded.email } });
+      const { dataValues } = await models.user.findOne({
+        where: { email: decoded.email },
+      });
       await models.user.update({ name, img }, { where: { id: dataValues.id } });
       const user = await models.user.findOne({ where: { id: dataValues.id } });
       if (user.dataValues.name === name && user.dataValues.img === img) {
@@ -121,7 +140,9 @@ const resolvers = {
     },
     createChannel: async (_, { channelInfo }) => {
       const decoded = await jwt.verify(channelInfo.token, process.env.JWT_SECRET);
-      const { dataValues } = await models.user.findOne({ where: { email: decoded.email } });
+      const { dataValues } = await models.user.findOne({
+        where: { email: decoded.email },
+      });
       const newChannel = await models.channel.create({
         img: channelInfo.img,
         name: channelInfo.name,
@@ -155,7 +176,7 @@ const resolvers = {
       return !!result;
     },
     createPet: async (_, { petInfo }) => {
-      if (!petInfo.channelId) {
+      if (!petInfo.channel_id) {
         throw new Error("channel ID 를 입력해주세요");
       }
       await jwt.verify(petInfo.token, process.env.JWT_SECRET);
@@ -164,12 +185,10 @@ const resolvers = {
         gender: petInfo.gender,
         age: petInfo.age,
         type: petInfo.type,
-        type_detail: petInfo.typeDetail,
+        type_detail: petInfo.type_detail,
         intro: petInfo.intro,
         img: petInfo.img,
-        todo_color: petInfo.todoColor,
-        card_cover: petInfo.cardCover,
-        channel_id: petInfo.channelId,
+        channel_id: petInfo.channel_id,
       });
       return pet;
     },
@@ -187,22 +206,24 @@ const resolvers = {
           type_detail: updatePet.typeDetail,
           intro: updatePet.intro,
           img: updatePet.img,
-          todo_color: updatePet.todoColor,
-          card_cover: updatePet.cardCover,
+          todo_color: updatePet.todo_color,
+          card_cover: updatePet.card_cover,
         },
         { where: { id: updatePet.petId } },
       );
-      const { dataValues } = await models.pet.findOne({ where: { id: updatePet.petId } });
+      const { dataValues } = await models.pet.findOne({
+        where: { id: updatePet.petId },
+      });
       if (
         dataValues.name === updatePet.name
         && dataValues.gender === updatePet.gender
         && dataValues.age === updatePet.age
         && dataValues.type === updatePet.type
-        && dataValues.type_detail === updatePet.typeDetail
+        && dataValues.type_detail === updatePet.type_detail
         && dataValues.intro === updatePet.intro
         && dataValues.img === updatePet.img
-        && dataValues.todo_color === updatePet.todoColor
-        && dataValues.card_cover === updatePet.cardCover
+        && dataValues.todo_color === updatePet.todo_color
+        && dataValues.card_cover === updatePet.card_cover
       ) {
         return true;
       }
@@ -221,62 +242,65 @@ const resolvers = {
       return pet.name;
     },
     createTodo: async (_, { todoInfo }) => {
-      if (!todoInfo.channelId) throw new Error("channel ID 를 입력해주세요");
+      if (!todoInfo.channel_id) throw new Error("channel ID 를 입력해주세요");
       const { email } = await jwt.verify(todoInfo.token, process.env.JWT_SECRET);
       const user = await models.user.findOne({ where: { email } });
       const channelByUser = await user.getChannels().filter((item) => {
-        return `${item.dataValues.id}` === todoInfo.channelId;
+        return `${item.dataValues.id}` === todoInfo.channel_id;
       });
       const channelIdByUser = channelByUser[0].dataValues.user_channel.dataValues.id;
       const todo = await models.todo.create({
         todo: todoInfo.todo,
         memo: todoInfo.memo,
-        push_date: todoInfo.pushDate,
-        end_date: todoInfo.endDate,
-        repeat_day: todoInfo.repeatDay,
-        pet_id: todoInfo.petId,
-        channel_id: todoInfo.channelId,
+        push_date: todoInfo.push_date,
+        end_date: todoInfo.end_date,
+        repeat_day: todoInfo.repeat_day,
+        pet_id: todoInfo.pet_id,
+        channel_id: todoInfo.channel_id,
         user_channel_id: channelIdByUser,
       });
 
-      todoInfo.assignedId.split(",").forEach((item) => {
+      todoInfo.assigned_id.split(",").forEach((item) => {
         todo.addUser_channel(item);
       });
       // user_channel에 존재하지 않은 값이 들어가면 서버에서는 오류를 띄우는데 투두 테이블에는 추가가 된다. 그걸 막고 싶은데 방법이 없을까?
       return todo;
     },
     updateTodo: async (_, { updateTodoInfo }) => {
-      if (!updateTodoInfo.todoId) throw new Error("Todo ID 를 입력해주세요");
+      if (!updateTodoInfo.todo_id) throw new Error("Todo ID 를 입력해주세요");
       await jwt.verify(updateTodoInfo.token, process.env.JWT_SECRET);
       await models.todo.update(
         {
           todo: updateTodoInfo.todo,
           memo: updateTodoInfo.memo,
-          push_date: updateTodoInfo.pushDate,
-          end_date: updateTodoInfo.endDate,
-          repeat_day: updateTodoInfo.repeatDay,
-          pet_id: updateTodoInfo.petId,
+          push_date: updateTodoInfo.push_date,
+          end_date: updateTodoInfo.end_date,
+          repeat_day: updateTodoInfo.repeat_day,
+          pet_id: updateTodoInfo.pet_id,
         },
-        { where: { id: updateTodoInfo.todoId } },
+        { where: { id: updateTodoInfo.todo_id } },
       );
       const todo = await models.todo.findOne({
-        where: { id: updateTodoInfo.todoId },
+        where: { id: updateTodoInfo.todo_id },
       });
       const assinged = await todo.getUser_channels().map((item) => {
         return item.dataValues.id;
       });
-      if (assinged.join() !== updateTodoInfo.assignedId) {
-        await models.user_channel_todo.destroy({ where: { todo_id: updateTodoInfo.todoId } });
-        updateTodoInfo.assignedId.split(",").forEach((item) => {
+      if (assinged.join() !== updateTodoInfo.assigned_id) {
+        await models.user_channel_todo.destroy({
+          where: { todo_id: updateTodoInfo.todo_id },
+        });
+        updateTodoInfo.assigned_id.split(",").forEach((item) => {
           todo.addUser_channel(item);
         });
       }
+      console.log("%%", updateTodoInfo.memo);
       if (
         todo.dataValues.todo === updateTodoInfo.todo
         && todo.dataValues.memo === updateTodoInfo.memo
         // todo.dataValues.push_date === updateTodoInfo.pushDate &&
         // todo.dataValues.end_date === updateTodoInfo.endDate &&
-        && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
+        && todo.dataValues.repeat_day === updateTodoInfo.repeat_day
       ) {
         return true;
       }
@@ -382,9 +406,3 @@ const resolvers = {
 };
 
 export default resolvers;
-
-// get method
-// const user = await models.user.findOne({ where: { email: decoded.email } });
-//       const a = await user.getChannels().map(item => {
-//         return item.dataValues.id;
-//       })
