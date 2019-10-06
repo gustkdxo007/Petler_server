@@ -115,6 +115,14 @@ const typeDefs = gql`
     deletePhoto(id: ID!): Boolean!
     addUserToChannel(token: String!, email: String!, channelId: ID!): String!
     updatePassword(token: String!, password: String!): Boolean!
+    dismissUser(token: String!, dismissId: ID!, channelId: ID!): Boolean!
+  }
+  type Subscription {
+    todo(channelId: ID!): TodoSubscription!
+  }
+  type TodoSubscription {
+    mutation: String!
+    channelId: ID!
   }
   scalar Date
 `;
