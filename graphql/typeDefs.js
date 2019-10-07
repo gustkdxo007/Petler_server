@@ -16,7 +16,7 @@ const typeDefs = gql`
     pets(id: ID!): [Pet!]!
     todos(id: ID): [Todo!]!
     checkUser(email: String!): Boolean!
-    setAlarm(id: ID): Boolean!
+    setAlarm: Boolean!
   }
   type Token {
     token: String!
