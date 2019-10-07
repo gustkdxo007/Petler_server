@@ -1,8 +1,6 @@
 import { PubSub, withFilter } from "apollo-server-express";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-// import { Op } from "sequelize";
-// import { async } from "rxjs/internal/scheduler/async";
 import models from "../models";
 import hash from "../auth/hash";
 

@@ -13,7 +13,7 @@ const typeDefs = gql`
     name: String!
     img: String
     users(id: ID): [User!]!
-    pets(id: ID!): [Pet!]!
+    pets(id: ID): [Pet!]!
     todos(id: ID): [Todo!]!
     checkUser(email: String!): Boolean!
     setAlarm: Boolean!
