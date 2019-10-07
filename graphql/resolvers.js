@@ -155,7 +155,6 @@ const resolvers = {
       return false;
     },
     setAlarm: async () => {
-      // console.log("@CHANNEL", channel); 유저가 가지고 있는 채널들
       // await getsUser_channel().filter(item => {
       //   return item.dataValues.user_id === dataValues.id;
       // });
@@ -183,7 +182,7 @@ const resolvers = {
     },
   },
   Todo: {
-    //   ⭐️assigned: async (pet, { id }) => {
+    //   assigned: async (pet, { id }) => {
     //   //         assigned(id: ID): ID
     //   const todos = await pet.getTodos();
     //   if (id) {
@@ -440,7 +439,7 @@ const resolvers = {
         },
         { where: { id } },
       );
-      const userChannelByTodo = await todo.getsUser_channel().filter((item) => {
+      const userChannelByTodo = await todo.getUser_channels().filter((item) => {
         return item.dataValues.user_id === dataValues.id;
       });
       const isTrue = await models.todo.findOne({ where: { id } });
