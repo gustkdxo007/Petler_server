@@ -154,20 +154,9 @@ const resolvers = {
       if (isUser.length) return true;
       return false;
     },
-    setAlarm: async () => {
-      // await getsUser_channel().filter(item => {
-      //   return item.dataValues.user_id === dataValues.id;
-      // });
-      // const todos = await channel.getTodos();
-      // .filter((item) => {
-      //   return item.dataValues.user_id === dataValues.id;
-      // });
-      // if (id) {
-      //   return todos.filter(c => {
-      //     return `${c.dataValues.id}` === id;
-      //   });
-      // }
-      // return todos;
+    setAlarm: async (channel) => {
+      const alarm = channel.user_channel.dataValues.set_alarm;
+      return alarm;
     },
   },
   Pet: {
