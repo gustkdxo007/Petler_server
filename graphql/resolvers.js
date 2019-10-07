@@ -1,18 +1,40 @@
+import { PubSub, withFilter } from "apollo-server-express";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+// import { Op } from "sequelize";
+// import { async } from "rxjs/internal/scheduler/async";
 import models from "../models";
 import hash from "../auth/hash";
 
 dotenv.config();
+const pubSub = new PubSub();
 
 const resolvers = {
   Query: {
+    // user: async (_, { email = "null", id = "null" }) => {
+    //   const user = await models.user.findOne({
+    //     where: {
+    //       [Op.or]: [{ email }, { id }],
+    //     },
+    //   });
+    //   const channel = await user.getChannels().map((item) => {
+    //     return item.dataValues;
+    //   });
+    //   user.channel = channel;
+    //   return user;
+    // },
     user: async (_, { token }) => {
       const decoded = await jwt.verify(token, process.env.JWT_SECRET);
       const user = await models.user.findOne({
         where: { email: decoded.email },
       });
       return user;
+    },
+    channel: async (_, args) => {
+      const channel = await models.channel.findOne({
+        where: { id: args.id },
+      });
+      return channel;
     },
     login: async (_, { email, password }) => {
       const user = await models.user.findOne({
@@ -42,6 +64,28 @@ const resolvers = {
       }
       return pet;
     },
+    // getUserByToken: async (_, { token }) => {
+    //   const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+    //   // console.log(decoded.exp < Date.now().splite(-3));
+    //   // console.log(decoded.exp);
+    //   // console.log(Date.now());
+    //   // if (decoded.exp < Date.now() / 1000) {
+    //   //   throw new Error("token 만료 기간이 지났습니다.");
+    //   // }
+    //   const user = await models.user.findOne({
+    //     where: { email: decoded.email },
+    //   });
+    //   if (!user) {
+    //     throw new Error("일치하는 유저 정보가 없습니다");
+    //   }
+    //   return user;},
+    // todo: async (_, args) => {
+    //   const todo = await models.todo.findOne({ where: { id: args.id } });
+    //   if (!todo) {
+    //     throw new Error("일치하는 todo가 없습니다");
+    //   }
+    //   return todo;
+    // },
     photo: async (_, args) => {
       const photo = await models.gallery.findOne({ where: { id: args.id } });
       if (!photo) {
@@ -56,6 +100,11 @@ const resolvers = {
       });
       const valid = hash(password);
       return valid === user.dataValues.password;
+    },
+    checkEmail: async (_, { email }) => {
+      const user = await models.user.findOne({ where: { email } });
+      if (user) return user.email;
+      return user;
     },
   },
   User: {
@@ -81,7 +130,6 @@ const resolvers = {
     },
     pets: async (channel, { id }) => {
       const pets = await channel.getPets();
-      console.log("PETS", pets);
       if (id) {
         return pets.filter((c) => {
           return `${c.dataValues.id}` === id;
@@ -98,6 +146,30 @@ const resolvers = {
       }
       return todos;
     },
+    checkUser: async (channel, { email }) => {
+      const users = await channel.getUsers();
+      const isUser = users.filter((user) => {
+        return user.dataValues.email === email;
+      });
+      if (isUser.length) return true;
+      return false;
+    },
+    setAlarm: async () => {
+      // console.log("@CHANNEL", channel); 유저가 가지고 있는 채널들
+      // await getsUser_channel().filter(item => {
+      //   return item.dataValues.user_id === dataValues.id;
+      // });
+      // const todos = await channel.getTodos();
+      // .filter((item) => {
+      //   return item.dataValues.user_id === dataValues.id;
+      // });
+      // if (id) {
+      //   return todos.filter(c => {
+      //     return `${c.dataValues.id}` === id;
+      //   });
+      // }
+      // return todos;
+    },
   },
   Pet: {
     todos: async (pet, { id }) => {
@@ -109,6 +181,38 @@ const resolvers = {
       }
       return todos;
     },
+  },
+  Todo: {
+    //   ⭐️assigned: async (pet, { id }) => {
+    //   //         assigned(id: ID): ID
+    //   const todos = await pet.getTodos();
+    //   if (id) {
+    //     return todos.filter((c) => {
+    //       return `${c.dataValues.id}` === id;
+    //     });
+    //   }
+    //   return todos;
+    // },
+    // completeDate: async (pet, { id }) => {
+    //   // completeDate(id: ID): Date!
+    //   const todos = await pet.getTodos();
+    //   if (id) {
+    //     return todos.filter((c) => {
+    //       return `${c.dataValues.id}` === id;
+    //     });
+    //   }
+    //   return todos;
+    // },
+    // writer_id: async (pet, { id }) => {
+    //   // writer_id(id: ID): String!
+    //   const todos = await pet.getTodos();
+    //   if (id) {
+    //     return todos.filter((c) => {
+    //       return `${c.dataValues.id}` === id;
+    //     });
+    //   }
+    //   return todos;
+    // },
   },
   Mutation: {
     signUp: async (_, { userInfo }) => {
@@ -128,9 +232,7 @@ const resolvers = {
     },
     updateUserInfo: async (_, { token, name, img }) => {
       const decoded = await jwt.verify(token, process.env.JWT_SECRET);
-      const { dataValues } = await models.user.findOne({
-        where: { email: decoded.email },
-      });
+      const { dataValues } = await models.user.findOne({ where: { email: decoded.email } });
       await models.user.update({ name, img }, { where: { id: dataValues.id } });
       const user = await models.user.findOne({ where: { id: dataValues.id } });
       if (user.dataValues.name === name && user.dataValues.img === img) {
@@ -140,9 +242,7 @@ const resolvers = {
     },
     createChannel: async (_, { channelInfo }) => {
       const decoded = await jwt.verify(channelInfo.token, process.env.JWT_SECRET);
-      const { dataValues } = await models.user.findOne({
-        where: { email: decoded.email },
-      });
+      const { dataValues } = await models.user.findOne({ where: { email: decoded.email } });
       const newChannel = await models.channel.create({
         img: channelInfo.img,
         name: channelInfo.name,
@@ -151,7 +251,7 @@ const resolvers = {
       return newChannel;
     },
     updateChannel: async (_, { channelInfo }) => {
-      if (!channelInfo.id) {
+      if (!channelInfo.channelId) {
         throw new Error("channel ID 를 입력해주세요.");
       }
       await jwt.verify(channelInfo.token, process.env.JWT_SECRET);
@@ -160,10 +260,10 @@ const resolvers = {
           img: channelInfo.img,
           name: channelInfo.name,
         },
-        { where: { id: channelInfo.id } },
+        { where: { id: channelInfo.channelId } },
       );
       const { dataValues } = await models.channel.findOne({
-        where: { id: channelInfo.id },
+        where: { id: channelInfo.channelId },
       });
 
       if (dataValues.name !== channelInfo.name) return false;
@@ -176,7 +276,7 @@ const resolvers = {
       return !!result;
     },
     createPet: async (_, { petInfo }) => {
-      if (!petInfo.channel_id) {
+      if (!petInfo.channelId) {
         throw new Error("channel ID 를 입력해주세요");
       }
       await jwt.verify(petInfo.token, process.env.JWT_SECRET);
@@ -185,10 +285,12 @@ const resolvers = {
         gender: petInfo.gender,
         age: petInfo.age,
         type: petInfo.type,
-        type_detail: petInfo.type_detail,
+        type_detail: petInfo.typeDetail,
         intro: petInfo.intro,
         img: petInfo.img,
-        channel_id: petInfo.channel_id,
+        todo_color: petInfo.todoColor,
+        card_cover: petInfo.cardCover,
+        channel_id: petInfo.channelId,
       });
       return pet;
     },
@@ -206,24 +308,22 @@ const resolvers = {
           type_detail: updatePet.typeDetail,
           intro: updatePet.intro,
           img: updatePet.img,
-          todo_color: updatePet.todo_color,
-          card_cover: updatePet.card_cover,
+          todo_color: updatePet.todoColor,
+          card_cover: updatePet.cardCover,
         },
         { where: { id: updatePet.petId } },
       );
-      const { dataValues } = await models.pet.findOne({
-        where: { id: updatePet.petId },
-      });
+      const { dataValues } = await models.pet.findOne({ where: { id: updatePet.petId } });
       if (
         dataValues.name === updatePet.name
         && dataValues.gender === updatePet.gender
         && dataValues.age === updatePet.age
         && dataValues.type === updatePet.type
-        && dataValues.type_detail === updatePet.type_detail
+        && dataValues.type_detail === updatePet.typeDetail
         && dataValues.intro === updatePet.intro
         && dataValues.img === updatePet.img
-        && dataValues.todo_color === updatePet.todo_color
-        && dataValues.card_cover === updatePet.card_cover
+        && dataValues.todo_color === updatePet.todoColor
+        && dataValues.card_cover === updatePet.cardCover
       ) {
         return true;
       }
@@ -242,66 +342,71 @@ const resolvers = {
       return pet.name;
     },
     createTodo: async (_, { todoInfo }) => {
-      if (!todoInfo.channel_id) throw new Error("channel ID 를 입력해주세요");
+      if (!todoInfo.channelId) throw new Error("channel ID 를 입력해주세요");
       const { email } = await jwt.verify(todoInfo.token, process.env.JWT_SECRET);
       const user = await models.user.findOne({ where: { email } });
       const channelByUser = await user.getChannels().filter((item) => {
-        return `${item.dataValues.id}` === todoInfo.channel_id;
+        return `${item.dataValues.id}` === todoInfo.channelId;
       });
       const channelIdByUser = channelByUser[0].dataValues.user_channel.dataValues.id;
       const todo = await models.todo.create({
         todo: todoInfo.todo,
         memo: todoInfo.memo,
-        push_date: todoInfo.push_date,
-        end_date: todoInfo.end_date,
-        repeat_day: todoInfo.repeat_day,
-        pet_id: todoInfo.pet_id,
-        channel_id: todoInfo.channel_id,
+        push_date: todoInfo.pushDate,
+        end_date: todoInfo.endDate,
+        repeat_day: todoInfo.repeatDay,
+        pet_id: todoInfo.petId,
+        channel_id: todoInfo.channelId,
         user_channel_id: channelIdByUser,
       });
 
-      todoInfo.assigned_id.split(",").forEach((item) => {
+      todoInfo.assignedId.split(",").forEach((item) => {
         todo.addUser_channel(item);
       });
-      // user_channel에 존재하지 않은 값이 들어가면 서버에서는 오류를 띄우는데 투두 테이블에는 추가가 된다. 그걸 막고 싶은데 방법이 없을까?
+      if (todo) {
+        pubSub.publish("TODO", {
+          todo: { mutation: "CREATE_TODO", channelId: todo.channel_id },
+        });
+      }
       return todo;
     },
     updateTodo: async (_, { updateTodoInfo }) => {
-      if (!updateTodoInfo.todo_id) throw new Error("Todo ID 를 입력해주세요");
+      if (!updateTodoInfo.todoId) throw new Error("Todo ID 를 입력해주세요");
       await jwt.verify(updateTodoInfo.token, process.env.JWT_SECRET);
       await models.todo.update(
         {
           todo: updateTodoInfo.todo,
           memo: updateTodoInfo.memo,
-          push_date: updateTodoInfo.push_date,
-          end_date: updateTodoInfo.end_date,
-          repeat_day: updateTodoInfo.repeat_day,
-          pet_id: updateTodoInfo.pet_id,
+          push_date: updateTodoInfo.pushDate,
+          end_date: updateTodoInfo.endDate,
+          repeat_day: updateTodoInfo.repeatDay,
+          pet_id: updateTodoInfo.petId,
         },
-        { where: { id: updateTodoInfo.todo_id } },
+        { where: { id: updateTodoInfo.todoId } },
       );
       const todo = await models.todo.findOne({
-        where: { id: updateTodoInfo.todo_id },
+        where: { id: updateTodoInfo.todoId },
       });
       const assinged = await todo.getUser_channels().map((item) => {
         return item.dataValues.id;
       });
-      if (assinged.join() !== updateTodoInfo.assigned_id) {
-        await models.user_channel_todo.destroy({
-          where: { todo_id: updateTodoInfo.todo_id },
-        });
-        updateTodoInfo.assigned_id.split(",").forEach((item) => {
+      if (assinged.join() !== updateTodoInfo.assignedId) {
+        await models.user_channel_todo.destroy({ where: { todo_id: updateTodoInfo.todoId } });
+        updateTodoInfo.assignedId.split(",").forEach((item) => {
           todo.addUser_channel(item);
         });
       }
-      console.log("%%", updateTodoInfo.memo);
       if (
         todo.dataValues.todo === updateTodoInfo.todo
         && todo.dataValues.memo === updateTodoInfo.memo
         // todo.dataValues.push_date === updateTodoInfo.pushDate &&
         // todo.dataValues.end_date === updateTodoInfo.endDate &&
-        && todo.dataValues.repeat_day === updateTodoInfo.repeat_day
+        && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
+        && `${todo.dataValues.pet_id}` === updateTodoInfo.petId
       ) {
+        pubSub.publish("TODO", {
+          todo: { mutation: "UPDATE_TODO", channelId: todo.dataValues.channel_id },
+        });
         return true;
       }
       return false;
@@ -317,12 +422,14 @@ const resolvers = {
       if (!value) {
         throw new Error("삭제를 실패하였습니다.");
       }
+      pubSub.publish("TODO", {
+        todo: { mutation: "DELETE_TODO", channelId: todo.dataValues.channel_id },
+      });
       return true;
     },
     isDoneTodo: async (_, { token, id }) => {
       const { email } = await jwt.verify(token, process.env.JWT_SECRET);
       const { dataValues } = await models.user.findOne({ where: { email } });
-
       const todo = await models.todo.findOne({ where: { id } });
       if (!todo) {
         throw new Error("해당 todo 가 존재하지 않습니다");
@@ -333,7 +440,7 @@ const resolvers = {
         },
         { where: { id } },
       );
-      const userChannelByTodo = await todo.getUser_channels().filter((item) => {
+      const userChannelByTodo = await todo.getsUser_channel().filter((item) => {
         return item.dataValues.user_id === dataValues.id;
       });
       const isTrue = await models.todo.findOne({ where: { id } });
@@ -353,12 +460,19 @@ const resolvers = {
           { where: { id: userChannelTodoId } },
         );
       }
+      pubSub.publish("TODO", {
+        todo: { mutation: "IS_DONE_TODO", channelId: todo.dataValues.channel_id },
+      });
       return isTrue.is_done;
     },
-    addUserToChannel: async (_, { token, channelId }) => {
-      const { email } = await jwt.verify(token, process.env.JWT_SECRET);
-      const user = await models.user.findOne({ where: { email } });
-      await user.addChannel(channelId);
+    addUserToChannel: async (_, { token, email, channelId }) => {
+      await jwt.verify(token, process.env.JWT_SECRET);
+      const invitedUser = await models.user.findOne({ where: { email } });
+      if (!invitedUser) {
+        throw new Error("초대가능한 유저가 아닙니다.");
+      }
+      await invitedUser.addChannel(channelId);
+      return email;
     },
     createPhoto: async (_, { img, memo }) => {
       const photo = await models.gallery.create({ img, memo });
@@ -402,6 +516,31 @@ const resolvers = {
       });
       return hash(password) === dataValues.password;
     },
+    dismissUser: async (_, { token, dismissId, channelId }) => {
+      await jwt.verify(token, process.env.JWT_SECRET);
+      const dismiss = await models.user_channel.destroy({
+        where: { user_id: dismissId, channel_id: channelId },
+      });
+      if (dismiss) return true;
+      return false;
+    },
+  },
+  Subscription: {
+    todo: {
+      subscribe: withFilter(
+        () => {
+          return pubSub.asyncIterator("TODO");
+        },
+        (payload, variables) => {
+          return `${payload.todo.channelId}` === variables.channelId;
+        },
+      ),
+    },
+    // todo: {
+    //   subscribe: () => {
+    //     return pubSub.asyncIterator(["TODO"]);
+    //   },
+    // },
   },
 };
 
