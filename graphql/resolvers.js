@@ -368,6 +368,7 @@ const resolvers = {
           todo: { mutation: "CREATE_TODO", channelId: todo.channel_id },
         });
       }
+      // user_channel에 존재하지 않은 값이 들어가면 서버에서는 오류를 띄우는데 투두 테이블에는 추가가 된다. 그걸 막고 싶은데 방법이 없을까?
       return todo;
     },
     updateTodo: async (_, { updateTodoInfo }) => {
