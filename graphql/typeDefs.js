@@ -6,12 +6,17 @@ const typeDefs = gql`
     name: String!
     email: String!
     img: String!
-    channel: [Channel!]!
+    channels(id: ID): [Channel!]!
   }
   type Channel {
     id: ID!
     name: String!
     img: String
+    users(id: ID): [User!]!
+    pets(id: ID): [Pet!]!
+    todos(id: ID): [Todo!]!
+    checkUser(email: String!): Boolean!
+    setAlarm: Boolean!
   }
   type Token {
     token: String!
@@ -29,6 +34,7 @@ const typeDefs = gql`
     img: String!
     todo_color: String!
     card_cover: String
+    todos(id: ID): [Todo!]!
   }
   type Todo {
     id: ID!
@@ -38,6 +44,9 @@ const typeDefs = gql`
     end_date: Date
     repeat_day: String
     is_done: Boolean!
+    assigned: ID
+    completeDate: Date!
+    writer_id: String!
   }
   type Photo {
     id: ID!
@@ -87,7 +96,7 @@ const typeDefs = gql`
   }
   type Query {
     "user는 email로 찾거나 id로 찾거나 둘 중 하나만 하면 됩니다. 혹시 두개다 입력하게 되면 or 문이 적용되기 때문에 꼭 동일한 유저정보를 넣어야 합니다."
-    user(email: String, id: ID): User
+    user(token: String!): User!
     login(email: String!, password: String!): Token!
     channel(id: ID!): Channel!
     pet(id: ID!): Pet!
@@ -96,6 +105,11 @@ const typeDefs = gql`
     photo(id: ID!): Photo!
     confirmPW(token: String!, password: String!): Boolean!
     checkEmail(email: String!): String
+    checkUser(email: String!): Boolean!
+    setAlarm(id: ID): Boolean!
+    assigned(id: ID): ID
+    completeDate(id: ID): Date!
+    writer_id(id: ID): String!
   }
   type Mutation {
     signUp(userInfo: UserInfo!): User!
