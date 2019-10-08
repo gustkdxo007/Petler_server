@@ -1,7 +1,6 @@
 import { PubSub, withFilter } from "apollo-server-express";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-import { Op } from "sequelize";
 import models from "../models";
 import hash from "../auth/hash";
 
@@ -10,19 +9,26 @@ const pubSub = new PubSub();
 
 const resolvers = {
   Query: {
-    user: async (_, { email = "null", id = "null" }) => {
+    // user: async (_, { email = "null", id = "null" }) => {
+    //   const user = await models.user.findOne({
+    //     where: {
+    //       [Op.or]: [{ email }, { id }],
+    //     },
+    //   });
+    //    if (!user) {
+    //        throw new Error("찾는 유저가 없습니다.");
+    //      }
+    //   const channel = await user.getChannels().map((item) => {
+    //     return item.dataValues;
+    //   });
+    //   user.channel = channel;
+    //   return user;
+    // },
+    user: async (_, { token }) => {
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
       const user = await models.user.findOne({
-        where: {
-          [Op.or]: [{ email }, { id }],
-        },
+        where: { email: decoded.email },
       });
-      if (!user) {
-        throw new Error("찾는 유저가 없습니다.");
-      }
-      const channel = await user.getChannels().map((item) => {
-        return item.dataValues;
-      });
-      user.channel = channel;
       return user;
     },
     channel: async (_, args) => {
@@ -59,29 +65,28 @@ const resolvers = {
       }
       return pet;
     },
-    getUserByToken: async (_, { token }) => {
-      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
-      // console.log(decoded.exp < Date.now().splite(-3));
-      // console.log(decoded.exp);
-      // console.log(Date.now());
-      // if (decoded.exp < Date.now() / 1000) {
-      //   throw new Error("token 만료 기간이 지났습니다.");
-      // }
-      const user = await models.user.findOne({
-        where: { email: decoded.email },
-      });
-      if (!user) {
-        throw new Error("일치하는 유저 정보가 없습니다");
-      }
-      return user;
-    },
-    todo: async (_, args) => {
-      const todo = await models.todo.findOne({ where: { id: args.id } });
-      if (!todo) {
-        throw new Error("일치하는 todo가 없습니다");
-      }
-      return todo;
-    },
+    // getUserByToken: async (_, { token }) => {
+    //   const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+    //   // console.log(decoded.exp < Date.now().splite(-3));
+    //   // console.log(decoded.exp);
+    //   // console.log(Date.now());
+    //   // if (decoded.exp < Date.now() / 1000) {
+    //   //   throw new Error("token 만료 기간이 지났습니다.");
+    //   // }
+    //   const user = await models.user.findOne({
+    //     where: { email: decoded.email },
+    //   });
+    //   if (!user) {
+    //     throw new Error("일치하는 유저 정보가 없습니다");
+    //   }
+    //   return user;},
+    // todo: async (_, args) => {
+    //   const todo = await models.todo.findOne({ where: { id: args.id } });
+    //   if (!todo) {
+    //     throw new Error("일치하는 todo가 없습니다");
+    //   }
+    //   return todo;
+    // },
     photo: async (_, args) => {
       const photo = await models.gallery.findOne({ where: { id: args.id } });
       if (!photo) {
@@ -102,6 +107,101 @@ const resolvers = {
       if (user) return user.email;
       return user;
     },
+  },
+  User: {
+    channels: async (user, { id }) => {
+      const channels = await user.getChannels();
+      if (id) {
+        return channels.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return channels;
+    },
+  },
+  Channel: {
+    users: async (channel, { id }) => {
+      const users = await channel.getUsers();
+      if (id) {
+        return users.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return users;
+    },
+    pets: async (channel, { id }) => {
+      const pets = await channel.getPets();
+      if (id) {
+        return pets.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return pets;
+    },
+    todos: async (channel, { id }) => {
+      const todos = await channel.getTodos();
+      if (id) {
+        return todos.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return todos;
+    },
+    checkUser: async (channel, { email }) => {
+      const users = await channel.getUsers();
+      const isUser = users.filter((user) => {
+        return user.dataValues.email === email;
+      });
+      if (isUser.length) return true;
+      return false;
+    },
+    setAlarm: async (channel) => {
+      const alarm = channel.user_channel.dataValues.set_alarm;
+      return alarm;
+    },
+  },
+  Pet: {
+    todos: async (pet, { id }) => {
+      const todos = await pet.getTodos();
+      if (id) {
+        return todos.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return todos;
+    },
+  },
+  Todo: {
+    //   assigned: async (pet, { id }) => {
+    //   //         assigned(id: ID): ID
+    //   const todos = await pet.getTodos();
+    //   if (id) {
+    //     return todos.filter((c) => {
+    //       return `${c.dataValues.id}` === id;
+    //     });
+    //   }
+    //   return todos;
+    // },
+    // completeDate: async (pet, { id }) => {
+    //   // completeDate(id: ID): Date!
+    //   const todos = await pet.getTodos();
+    //   if (id) {
+    //     return todos.filter((c) => {
+    //       return `${c.dataValues.id}` === id;
+    //     });
+    //   }
+    //   return todos;
+    // },
+    // writer_id: async (pet, { id }) => {
+    //   // writer_id(id: ID): String!
+    //   const todos = await pet.getTodos();
+    //   if (id) {
+    //     return todos.filter((c) => {
+    //       return `${c.dataValues.id}` === id;
+    //     });
+    //   }
+    //   return todos;
+    // },
   },
   Mutation: {
     signUp: async (_, { userInfo }) => {
@@ -320,7 +420,6 @@ const resolvers = {
     isDoneTodo: async (_, { token, id }) => {
       const { email } = await jwt.verify(token, process.env.JWT_SECRET);
       const { dataValues } = await models.user.findOne({ where: { email } });
-
       const todo = await models.todo.findOne({ where: { id } });
       if (!todo) {
         throw new Error("해당 todo 가 존재하지 않습니다");
