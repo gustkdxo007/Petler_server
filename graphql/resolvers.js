@@ -15,6 +15,9 @@ const resolvers = {
     //       [Op.or]: [{ email }, { id }],
     //     },
     //   });
+    //    if (!user) {
+    //        throw new Error("찾는 유저가 없습니다.");
+    //      }
     //   const channel = await user.getChannels().map((item) => {
     //     return item.dataValues;
     //   });
