@@ -16,7 +16,7 @@ const repeatTodo = async () => {
       where: { repeat_day: { [Op.like]: `%${today}%` } },
     },
   );
-  await todo.filter(async (item) => {
+  await todo.forEach(async (item) => {
     await models.user_channel_todo.update(
       {
         complete_date: null,
