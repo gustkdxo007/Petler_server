@@ -28,12 +28,12 @@ const resolvers = {
       });
       return user;
     },
-    channel: async (_, args) => {
-      const channel = await models.channel.findOne({
-        where: { id: args.id },
-      });
-      return channel;
-    },
+    // channel: async (_, args) => {
+    //   const channel = await models.channel.findOne({
+    //     where: { id: args.id },
+    //   });
+    //   return channel;
+    // },
     login: async (_, { email, password }) => {
       const user = await models.user.findOne({
         where: { email },
@@ -53,30 +53,31 @@ const resolvers = {
       });
       return { token, user, channel };
     },
-    pet: async (_, { id }) => {
-      const pet = await models.pet.findOne({
-        where: { id },
-      });
-      if (!pet) {
-        throw new Error("찾는 pet이 없습니다.");
-      }
-      return pet;
-    },
-    // getUserByToken: async (_, { token }) => {
-    //   const decoded = await jwt.verify(token, process.env.JWT_SECRET);
-    //   // console.log(decoded.exp < Date.now().splite(-3));
-    //   // console.log(decoded.exp);
-    //   // console.log(Date.now());
-    //   // if (decoded.exp < Date.now() / 1000) {
-    //   //   throw new Error("token 만료 기간이 지났습니다.");
-    //   // }
-    //   const user = await models.user.findOne({
-    //     where: { email: decoded.email },
+    // pet: async (_, { id }) => {
+    //   const pet = await models.pet.findOne({
+    //     where: { id },
     //   });
-    //   if (!user) {
-    //     throw new Error("일치하는 유저 정보가 없습니다");
+    //   if (!pet) {
+    //     throw new Error("찾는 pet이 없습니다.");
     //   }
-    //   return user;},
+    //   return pet;
+    // },
+    getUserByToken: async (_, { token }) => {
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+      // console.log(decoded.exp < Date.now().splite(-3));
+      // console.log(decoded.exp);
+      // console.log(Date.now());
+      // if (decoded.exp < Date.now() / 1000) {
+      //   throw new Error("token 만료 기간이 지났습니다.");
+      // }
+      const user = await models.user.findOne({
+        where: { email: decoded.email },
+      });
+      if (!user) {
+        throw new Error("일치하는 유저 정보가 없습니다");
+      }
+      return user;
+    },
     // todo: async (_, args) => {
     //   const todo = await models.todo.findOne({ where: { id: args.id } });
     //   if (!todo) {
@@ -105,6 +106,7 @@ const resolvers = {
       return user;
     },
   },
+
   User: {
     channels: async (user, { id }) => {
       const channels = await user.getChannels();
@@ -156,6 +158,9 @@ const resolvers = {
       const alarm = channel.user_channel.dataValues.set_alarm;
       return alarm;
     },
+    user_channel_id: async (user) => {
+      return user.user_channel.dataValues.id;
+    },
   },
   Pet: {
     todos: async (pet, { id }) => {
@@ -169,36 +174,45 @@ const resolvers = {
     },
   },
   Todo: {
-    //   assigned: async (pet, { id }) => {
-    //   //         assigned(id: ID): ID
-    //   const todos = await pet.getTodos();
-    //   if (id) {
-    //     return todos.filter((c) => {
-    //       return `${c.dataValues.id}` === id;
-    //     });
-    //   }
-    //   return todos;
-    // },
-    // completeDate: async (pet, { id }) => {
-    //   // completeDate(id: ID): Date!
-    //   const todos = await pet.getTodos();
-    //   if (id) {
-    //     return todos.filter((c) => {
-    //       return `${c.dataValues.id}` === id;
-    //     });
-    //   }
-    //   return todos;
-    // },
-    // writer_id: async (pet, { id }) => {
-    //   // writer_id(id: ID): String!
-    //   const todos = await pet.getTodos();
-    //   if (id) {
-    //     return todos.filter((c) => {
-    //       return `${c.dataValues.id}` === id;
-    //     });
-    //   }
-    //   return todos;
-    // },
+    assignee: async (todo) => {
+      const userChannel = await todo.getUser_channels();
+      const userId = userChannel.map((v) => {
+        return v.dataValues.user_id;
+      });
+      const users = [];
+      return Promise.all(
+        userId.map((v) => {
+          return models.user.findAll({ where: { id: v } });
+        }),
+      )
+        .then((values) => {
+          values.forEach((u) => {
+            users.push(u[0].dataValues);
+          });
+          return users;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    pets: async (todo) => {
+      const todos = await todo.getPet();
+      const pet = todos.dataValues;
+      return pet;
+    },
+    complete_date: async (todo) => {
+      const todos = await todo.getUser_channels();
+      const userChannelTodo = todos[0].dataValues.user_channel_todo.dataValues;
+      return userChannelTodo.complete_date;
+    },
+    writer: async (todo) => {
+      const todos = await todo.getUser_channels();
+      const writerId = todos[0].dataValues.user_id;
+      const user = await models.user.findOne({
+        where: { id: writerId },
+      });
+      return user;
+    },
   },
   Mutation: {
     signUp: async (_, { userInfo }) => {
@@ -345,7 +359,6 @@ const resolvers = {
         channel_id: todoInfo.channelId,
         user_channel_id: channelIdByUser,
       });
-
       todoInfo.assignedId.split(",").forEach((item) => {
         todo.addUser_channel(item);
       });
@@ -413,6 +426,29 @@ const resolvers = {
         todo: { mutation: "DELETE_TODO", channelId: todo.dataValues.channel_id },
       });
       return true;
+    },
+    updateAlarm: async (_, { token, channelId }) => {
+      const { email } = await jwt.verify(token, process.env.JWT_SECRET);
+      const user = await models.user.findOne({
+        where: { email },
+      });
+      const channel = await user.getChannels().filter((item) => {
+        return `${item.dataValues.id}` === channelId;
+      });
+      const alarm = channel[0].user_channel.dataValues.set_alarm;
+      const ID = channel[0].user_channel.dataValues.id;
+      await models.user_channel.update(
+        {
+          set_alarm: !alarm,
+        },
+        { where: { id: ID } },
+      );
+      const result = await models.user_channel.findOne({
+        where: {
+          id: ID,
+        },
+      });
+      return alarm === result.dataValues.set_alarm;
     },
     isDoneTodo: async (_, { token, id }) => {
       const { email } = await jwt.verify(token, process.env.JWT_SECRET);
