@@ -136,6 +136,7 @@ const typeDefs = gql`
   }
   type TodoSubscription {
     mutation: String!
+    data: Todo!
     channelId: ID!
   }
   scalar Date
