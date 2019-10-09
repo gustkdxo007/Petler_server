@@ -45,10 +45,6 @@ const typeDefs = gql`
     end_date: Date
     repeat_day: String
     is_done: Boolean!
-    pets: Pet!
-    assignee: [User!]!
-    complete_date: Date
-    writer: User!
   }
   type Photo {
     id: ID!
@@ -109,11 +105,6 @@ const typeDefs = gql`
     checkEmail(email: String!): String
     checkUser(email: String!): Boolean!
     setAlarm(id: ID): Boolean!
-    assignee: [User!]!
-    complete_date: Date
-    writer: User!
-    pet_id: Pet!
-    user_channel_id: ID!
   }
   type Mutation {
     signUp(userInfo: UserInfo!): User!

@@ -28,12 +28,12 @@ const resolvers = {
       });
       return user;
     },
-    // channel: async (_, args) => {
-    //   const channel = await models.channel.findOne({
-    //     where: { id: args.id },
-    //   });
-    //   return channel;
-    // },
+    channel: async (_, args) => {
+      const channel = await models.channel.findOne({
+        where: { id: args.id },
+      });
+      return channel;
+    },
     login: async (_, { email, password }) => {
       const user = await models.user.findOne({
         where: { email },
@@ -53,15 +53,15 @@ const resolvers = {
       });
       return { token, user, channel };
     },
-    // pet: async (_, { id }) => {
-    //   const pet = await models.pet.findOne({
-    //     where: { id },
-    //   });
-    //   if (!pet) {
-    //     throw new Error("찾는 pet이 없습니다.");
-    //   }
-    //   return pet;
-    // },
+    pet: async (_, { id }) => {
+      const pet = await models.pet.findOne({
+        where: { id },
+      });
+      if (!pet) {
+        throw new Error("찾는 pet이 없습니다.");
+      }
+      return pet;
+    },
     getUserByToken: async (_, { token }) => {
       const decoded = await jwt.verify(token, process.env.JWT_SECRET);
       // console.log(decoded.exp < Date.now().splite(-3));
@@ -78,13 +78,13 @@ const resolvers = {
       }
       return user;
     },
-    // todo: async (_, args) => {
-    //   const todo = await models.todo.findOne({ where: { id: args.id } });
-    //   if (!todo) {
-    //     throw new Error("일치하는 todo가 없습니다");
-    //   }
-    //   return todo;
-    // },
+    todo: async (_, args) => {
+      const todo = await models.todo.findOne({ where: { id: args.id } });
+      if (!todo) {
+        throw new Error("일치하는 todo가 없습니다");
+      }
+      return todo;
+    },
     photo: async (_, args) => {
       const photo = await models.gallery.findOne({ where: { id: args.id } });
       if (!photo) {
@@ -162,6 +162,7 @@ const resolvers = {
       return user.user_channel.dataValues.id;
     },
   },
+
   Pet: {
     todos: async (pet, { id }) => {
       const todos = await pet.getTodos();
@@ -173,47 +174,7 @@ const resolvers = {
       return todos;
     },
   },
-  Todo: {
-    assignee: async (todo) => {
-      const userChannel = await todo.getUser_channels();
-      const userId = userChannel.map((v) => {
-        return v.dataValues.user_id;
-      });
-      const users = [];
-      return Promise.all(
-        userId.map((v) => {
-          return models.user.findAll({ where: { id: v } });
-        }),
-      )
-        .then((values) => {
-          values.forEach((u) => {
-            users.push(u[0].dataValues);
-          });
-          return users;
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-    },
-    pets: async (todo) => {
-      const todos = await todo.getPet();
-      const pet = todos.dataValues;
-      return pet;
-    },
-    complete_date: async (todo) => {
-      const todos = await todo.getUser_channels();
-      const userChannelTodo = todos[0].dataValues.user_channel_todo.dataValues;
-      return userChannelTodo.complete_date;
-    },
-    writer: async (todo) => {
-      const todos = await todo.getUser_channels();
-      const writerId = todos[0].dataValues.user_id;
-      const user = await models.user.findOne({
-        where: { id: writerId },
-      });
-      return user;
-    },
-  },
+
   Mutation: {
     signUp: async (_, { userInfo }) => {
       const signed = await models.user.findOne({
