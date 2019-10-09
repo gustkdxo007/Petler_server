@@ -45,6 +45,10 @@ const typeDefs = gql`
     end_date: Date
     repeat_day: String
     is_done: Boolean!
+    pets: Pet!
+    assignee: [User!]!
+    complete_date: Date
+    writer: User!
   }
   type Photo {
     id: ID!

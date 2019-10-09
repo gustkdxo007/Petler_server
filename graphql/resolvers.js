@@ -162,7 +162,47 @@ const resolvers = {
       return user.user_channel.dataValues.id;
     },
   },
-
+  Todo: {
+    assignee: async (todo) => {
+      const userChannel = await todo.getUser_channels();
+      const userId = userChannel.map((v) => {
+        return v.dataValues.user_id;
+      });
+      const users = [];
+      return Promise.all(
+        userId.map((v) => {
+          return models.user.findAll({ where: { id: v } });
+        }),
+      )
+        .then((values) => {
+          values.forEach((u) => {
+            users.push(u[0].dataValues);
+          });
+          return users;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    pets: async (todo) => {
+      const todos = await todo.getPet();
+      const pet = todos.dataValues;
+      return pet;
+    },
+    complete_date: async (todo) => {
+      const todos = await todo.getUser_channels();
+      const userChannelTodo = todos[0].dataValues.user_channel_todo.dataValues;
+      return userChannelTodo.complete_date;
+    },
+    writer: async (todo) => {
+      const todos = await todo.getUser_channels();
+      const writerId = todos[0].dataValues.user_id;
+      const user = await models.user.findOne({
+        where: { id: writerId },
+      });
+      return user;
+    },
+  },
   Pet: {
     todos: async (pet, { id }) => {
       const todos = await pet.getTodos();
