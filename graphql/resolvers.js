@@ -161,6 +161,50 @@ const resolvers = {
       const alarm = channel.user_channel.dataValues.set_alarm;
       return alarm;
     },
+    user_channel_id: async (channel) => {
+      return channel.user_channel.dataValues.id;
+    },
+  },
+  Todo: {
+    assignee: async (todo) => {
+      const userChannel = await todo.getUser_channels();
+      const userId = userChannel.map((v) => {
+        return v.dataValues.user_id;
+      });
+      const users = [];
+      return Promise.all(
+        userId.map((v) => {
+          return models.user.findOne({ where: { id: v } });
+        }),
+      )
+        .then((values) => {
+          values.forEach((u) => {
+            users.push(u.dataValues);
+          });
+          return users;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    pets: async (todo) => {
+      const todos = await todo.getPet();
+      const pet = todos.dataValues;
+      return pet;
+    },
+    complete_date: async (todo) => {
+      const todos = await todo.getUser_channels();
+      const userChannelTodo = todos[0].dataValues.user_channel_todo.dataValues;
+      return userChannelTodo.complete_date;
+    },
+    writer: async (todo) => {
+      const todos = await todo.getUser_channels();
+      const writerId = todos[0].dataValues.user_id;
+      const user = await models.user.findOne({
+        where: { id: writerId },
+      });
+      return user;
+    },
   },
   Pet: {
     todos: async (pet, { id }) => {
@@ -172,38 +216,6 @@ const resolvers = {
       }
       return todos;
     },
-  },
-  Todo: {
-    //   assigned: async (pet, { id }) => {
-    //   //         assigned(id: ID): ID
-    //   const todos = await pet.getTodos();
-    //   if (id) {
-    //     return todos.filter((c) => {
-    //       return `${c.dataValues.id}` === id;
-    //     });
-    //   }
-    //   return todos;
-    // },
-    // completeDate: async (pet, { id }) => {
-    //   // completeDate(id: ID): Date!
-    //   const todos = await pet.getTodos();
-    //   if (id) {
-    //     return todos.filter((c) => {
-    //       return `${c.dataValues.id}` === id;
-    //     });
-    //   }
-    //   return todos;
-    // },
-    // writer_id: async (pet, { id }) => {
-    //   // writer_id(id: ID): String!
-    //   const todos = await pet.getTodos();
-    //   if (id) {
-    //     return todos.filter((c) => {
-    //       return `${c.dataValues.id}` === id;
-    //     });
-    //   }
-    //   return todos;
-    // },
   },
   Mutation: {
     signUp: async (_, { userInfo }) => {
@@ -350,7 +362,6 @@ const resolvers = {
         channel_id: todoInfo.channelId,
         user_channel_id: channelIdByUser,
       });
-
       const arrAssignedId = todoInfo.assignedId.split(",");
       arrAssignedId.forEach((item) => {
         todo.addUser_channel(item);
@@ -453,6 +464,29 @@ const resolvers = {
         schedule.scheduledJobs[`todo${todo.dataValues.id}`].cancel();
       }
       return true;
+    },
+    updateAlarm: async (_, { token, channelId }) => {
+      const { email } = await jwt.verify(token, process.env.JWT_SECRET);
+      const user = await models.user.findOne({
+        where: { email },
+      });
+      const channel = await user.getChannels().filter((item) => {
+        return `${item.dataValues.id}` === channelId;
+      });
+      const alarm = channel[0].user_channel.dataValues.set_alarm;
+      const ID = channel[0].user_channel.dataValues.id;
+      await models.user_channel.update(
+        {
+          set_alarm: !alarm,
+        },
+        { where: { id: ID } },
+      );
+      const result = await models.user_channel.findOne({
+        where: {
+          id: ID,
+        },
+      });
+      return alarm === result.dataValues.set_alarm;
     },
     isDoneTodo: async (_, { token, id }) => {
       const { email } = await jwt.verify(token, process.env.JWT_SECRET);

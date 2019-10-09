@@ -17,6 +17,7 @@ const typeDefs = gql`
     todos(id: ID): [Todo!]!
     checkUser(email: String!): Boolean!
     setAlarm: Boolean!
+    user_channel_id: ID!
   }
   type Token {
     token: String!
@@ -44,9 +45,10 @@ const typeDefs = gql`
     end_date: Date
     repeat_day: String
     is_done: Boolean!
-    assigned: ID
-    completeDate: Date!
-    writer_id: String!
+    pets: Pet!
+    assignee: [User!]!
+    complete_date: Date
+    writer: User!
   }
   type Photo {
     id: ID!
@@ -107,9 +109,6 @@ const typeDefs = gql`
     checkEmail(email: String!): String
     checkUser(email: String!): Boolean!
     setAlarm(id: ID): Boolean!
-    assigned(id: ID): ID
-    completeDate(id: ID): Date!
-    writer_id(id: ID): String!
   }
   type Mutation {
     signUp(userInfo: UserInfo!): User!
@@ -127,6 +126,7 @@ const typeDefs = gql`
     createPhoto(img: String!, memo: String): Photo
     updatePhoto(id: ID!, img: String!, memo: String!): Boolean!
     deletePhoto(id: ID!): Boolean!
+    updateAlarm(token: String!, channelId: ID!): Boolean!
     addUserToChannel(token: String!, email: String!, channelId: ID!): String!
     updatePassword(token: String!, password: String!): Boolean!
     dismissUser(token: String!, dismissId: ID!, channelId: ID!): Boolean!
