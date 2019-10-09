@@ -109,11 +109,6 @@ const typeDefs = gql`
     checkEmail(email: String!): String
     checkUser(email: String!): Boolean!
     setAlarm(id: ID): Boolean!
-    assignee: [User!]!
-    complete_date: Date
-    writer: User!
-    pet_id: Pet!
-    user_channel_id: ID!
   }
   type Mutation {
     signUp(userInfo: UserInfo!): User!

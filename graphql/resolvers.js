@@ -158,8 +158,8 @@ const resolvers = {
       const alarm = channel.user_channel.dataValues.set_alarm;
       return alarm;
     },
-    user_channel_id: async (user) => {
-      return user.user_channel.dataValues.id;
+    user_channel_id: async (channel) => {
+      return channel.user_channel.dataValues.id;
     },
   },
   Todo: {
@@ -171,12 +171,12 @@ const resolvers = {
       const users = [];
       return Promise.all(
         userId.map((v) => {
-          return models.user.findAll({ where: { id: v } });
+          return models.user.findOne({ where: { id: v } });
         }),
       )
         .then((values) => {
           values.forEach((u) => {
-            users.push(u[0].dataValues);
+            users.push(u.dataValues);
           });
           return users;
         })
