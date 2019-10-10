@@ -1,7 +1,6 @@
 import { PubSub, withFilter } from "apollo-server-express";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-import { Op } from "sequelize";
 import models from "../models";
 import hash from "../auth/hash";
 
@@ -10,16 +9,23 @@ const pubSub = new PubSub();
 
 const resolvers = {
   Query: {
-    user: async (_, { email = "null", id = "null" }) => {
+    // user: async (_, { email = "null", id = "null" }) => {
+    //   const user = await models.user.findOne({
+    //     where: {
+    //       [Op.or]: [{ email }, { id }],
+    //     },
+    //   });
+    //   const channel = await user.getChannels().map((item) => {
+    //     return item.dataValues;
+    //   });
+    //   user.channel = channel;
+    //   return user;
+    // },
+    user: async (_, { token }) => {
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET);
       const user = await models.user.findOne({
-        where: {
-          [Op.or]: [{ email }, { id }],
-        },
+        where: { email: decoded.email },
       });
-      const channel = await user.getChannels().map((item) => {
-        return item.dataValues;
-      });
-      user.channel = channel;
       return user;
     },
     channel: async (_, args) => {
@@ -100,6 +106,115 @@ const resolvers = {
       return user;
     },
   },
+
+  User: {
+    channels: async (user, { id }) => {
+      const channels = await user.getChannels();
+      if (id) {
+        return channels.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return channels;
+    },
+  },
+  Channel: {
+    users: async (channel, { id }) => {
+      const users = await channel.getUsers();
+      if (id) {
+        return users.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return users;
+    },
+    pets: async (channel, { id }) => {
+      const pets = await channel.getPets();
+      if (id) {
+        return pets.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return pets;
+    },
+    todos: async (channel, { id }) => {
+      const todos = await channel.getTodos();
+      if (id) {
+        return todos.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return todos;
+    },
+    checkUser: async (channel, { email }) => {
+      const users = await channel.getUsers();
+      const isUser = users.filter((user) => {
+        return user.dataValues.email === email;
+      });
+      if (isUser.length) return true;
+      return false;
+    },
+    setAlarm: async (channel) => {
+      const alarm = channel.user_channel.dataValues.set_alarm;
+      return alarm;
+    },
+    user_channel_id: async (channel) => {
+      return channel.user_channel.dataValues.id;
+    },
+  },
+  Todo: {
+    assignee: async (todo) => {
+      const userChannel = await todo.getUser_channels();
+      const userId = userChannel.map((v) => {
+        return v.dataValues.user_id;
+      });
+      const users = [];
+      return Promise.all(
+        userId.map((v) => {
+          return models.user.findOne({ where: { id: v } });
+        }),
+      )
+        .then((values) => {
+          values.forEach((u) => {
+            users.push(u.dataValues);
+          });
+          return users;
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    pets: async (todo) => {
+      const todos = await todo.getPet();
+      const pet = todos.dataValues;
+      return pet;
+    },
+    complete_date: async (todo) => {
+      const todos = await todo.getUser_channels();
+      const userChannelTodo = todos[0].dataValues.user_channel_todo.dataValues;
+      return userChannelTodo.complete_date;
+    },
+    writer: async (todo) => {
+      const todos = await todo.getUser_channels();
+      const writerId = todos[0].dataValues.user_id;
+      const user = await models.user.findOne({
+        where: { id: writerId },
+      });
+      return user;
+    },
+  },
+  Pet: {
+    todos: async (pet, { id }) => {
+      const todos = await pet.getTodos();
+      if (id) {
+        return todos.filter((c) => {
+          return `${c.dataValues.id}` === id;
+        });
+      }
+      return todos;
+    },
+  },
+
   Mutation: {
     signUp: async (_, { userInfo }) => {
       const signed = await models.user.findOne({
@@ -228,25 +343,25 @@ const resolvers = {
       return pet.name;
     },
     createTodo: async (_, { todoInfo }) => {
-      if (!todoInfo.channelId) throw new Error("channel ID 를 입력해주세요");
+      if (!todoInfo.channel_id) throw new Error("channel ID 를 입력해주세요");
       const { email } = await jwt.verify(todoInfo.token, process.env.JWT_SECRET);
       const user = await models.user.findOne({ where: { email } });
       const channelByUser = await user.getChannels().filter((item) => {
-        return `${item.dataValues.id}` === todoInfo.channelId;
+        return `${item.dataValues.id}` === todoInfo.channel_id;
       });
       const channelIdByUser = channelByUser[0].dataValues.user_channel.dataValues.id;
       const todo = await models.todo.create({
         todo: todoInfo.todo,
         memo: todoInfo.memo,
-        push_date: todoInfo.pushDate,
-        end_date: todoInfo.endDate,
-        repeat_day: todoInfo.repeatDay,
-        pet_id: todoInfo.petId,
-        channel_id: todoInfo.channelId,
+        push_date: todoInfo.push_date,
+        end_date: todoInfo.end_date,
+        repeat_day: todoInfo.repeat_day,
+        pet_id: todoInfo.pet_id,
+        channel_id: todoInfo.channel_id,
         user_channel_id: channelIdByUser,
       });
 
-      todoInfo.assignedId.split(",").forEach((item) => {
+      todoInfo.assigned_id.split(",").forEach((item) => {
         todo.addUser_channel(item);
       });
       if (todo) {
@@ -258,38 +373,38 @@ const resolvers = {
       return todo;
     },
     updateTodo: async (_, { updateTodoInfo }) => {
-      if (!updateTodoInfo.todoId) throw new Error("Todo ID 를 입력해주세요");
+      if (!updateTodoInfo.todo_id) throw new Error("Todo ID 를 입력해주세요");
       await jwt.verify(updateTodoInfo.token, process.env.JWT_SECRET);
       await models.todo.update(
         {
           todo: updateTodoInfo.todo,
           memo: updateTodoInfo.memo,
-          push_date: updateTodoInfo.pushDate,
-          end_date: updateTodoInfo.endDate,
-          repeat_day: updateTodoInfo.repeatDay,
-          pet_id: updateTodoInfo.petId,
+          push_date: updateTodoInfo.push_date,
+          end_date: updateTodoInfo.end_date,
+          repeat_day: updateTodoInfo.repeat_day,
+          pet_id: updateTodoInfo.pet_id,
         },
-        { where: { id: updateTodoInfo.todoId } },
+        { where: { id: updateTodoInfo.todo_id } },
       );
       const todo = await models.todo.findOne({
-        where: { id: updateTodoInfo.todoId },
+        where: { id: updateTodoInfo.todo_id },
       });
       const assinged = await todo.getUser_channels().map((item) => {
         return item.dataValues.id;
       });
-      if (assinged.join() !== updateTodoInfo.assignedId) {
-        await models.user_channel_todo.destroy({ where: { todo_id: updateTodoInfo.todoId } });
-        updateTodoInfo.assignedId.split(",").forEach((item) => {
+      if (assinged.join() !== updateTodoInfo.assigned_id) {
+        await models.user_channel_todo.destroy({ where: { todo_id: updateTodoInfo.todo_id } });
+        updateTodoInfo.assigned_id.split(",").forEach((item) => {
           todo.addUser_channel(item);
         });
       }
       if (
         todo.dataValues.todo === updateTodoInfo.todo
         && todo.dataValues.memo === updateTodoInfo.memo
-        // todo.dataValues.push_date === updateTodoInfo.pushDate &&
-        // todo.dataValues.end_date === updateTodoInfo.endDate &&
-        && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
-        && `${todo.dataValues.pet_id}` === updateTodoInfo.petId
+        // todo.dataValues.push_date === updateTodoInfo.push_date &&
+        // todo.dataValues.end_date === updateTodoInfo.end_date &&
+        && todo.dataValues.repeat_day === updateTodoInfo.repeat_day
+        && `${todo.dataValues.pet_id}` === updateTodoInfo.pet_id
       ) {
         pubSub.publish("TODO", {
           todo: { mutation: "UPDATE_TODO", channelId: todo.dataValues.channel_id },

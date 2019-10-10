@@ -6,12 +6,18 @@ const typeDefs = gql`
     name: String!
     email: String!
     img: String!
-    channel: [Channel!]!
+    channels(id: ID): [Channel!]!
   }
   type Channel {
     id: ID!
     name: String!
     img: String
+    users(id: ID): [User!]!
+    pets(id: ID): [Pet!]!
+    todos(id: ID): [Todo!]!
+    checkUser(email: String!): Boolean!
+    setAlarm: Boolean!
+    user_channel_id: ID!
   }
   type Token {
     token: String!
@@ -29,6 +35,7 @@ const typeDefs = gql`
     img: String!
     todo_color: String!
     card_cover: String
+    todos(id: ID): [Todo!]!
   }
   type Todo {
     id: ID!
@@ -38,6 +45,10 @@ const typeDefs = gql`
     end_date: Date
     repeat_day: String
     is_done: Boolean!
+    pets: Pet!
+    assignee: [User!]!
+    complete_date: Date
+    writer: User!
   }
   type Photo {
     id: ID!
@@ -75,19 +86,19 @@ const typeDefs = gql`
   "create할때는 channelID를 꼭 입력해주시고, update 할때는 todoId를 꼭 입력해주세요"
   input TodoInfo {
     token: String!
-    todoId: ID
+    todo_id: ID
     todo: String!
     memo: String
-    pushDate: Date
-    endDate: Date
-    repeatDay: String
-    petId: ID!
-    channelId: ID
-    assignedId: ID!
+    push_date: Date
+    end_date: Date
+    repeat_day: String
+    pet_id: ID!
+    channel_id: ID
+    assigned_id: ID!
   }
   type Query {
     "user는 email로 찾거나 id로 찾거나 둘 중 하나만 하면 됩니다. 혹시 두개다 입력하게 되면 or 문이 적용되기 때문에 꼭 동일한 유저정보를 넣어야 합니다."
-    user(email: String, id: ID): User
+    user(token: String!): User!
     login(email: String!, password: String!): Token!
     channel(id: ID!): Channel!
     pet(id: ID!): Pet!
@@ -96,6 +107,8 @@ const typeDefs = gql`
     photo(id: ID!): Photo!
     confirmPW(token: String!, password: String!): Boolean!
     checkEmail(email: String!): String
+    checkUser(email: String!): Boolean!
+    setAlarm(id: ID): Boolean!
   }
   type Mutation {
     signUp(userInfo: UserInfo!): User!
@@ -113,6 +126,7 @@ const typeDefs = gql`
     createPhoto(img: String!, memo: String): Photo
     updatePhoto(id: ID!, img: String!, memo: String!): Boolean!
     deletePhoto(id: ID!): Boolean!
+    updateAlarm(token: String!, channelId: ID!): Boolean!
     addUserToChannel(token: String!, email: String!, channelId: ID!): String!
     updatePassword(token: String!, password: String!): Boolean!
     dismissUser(token: String!, dismissId: ID!, channelId: ID!): Boolean!
