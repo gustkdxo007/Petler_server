@@ -363,12 +363,12 @@ const resolvers = {
         channel_id: todoInfo.channelId,
         user_channel_id: channelIdByUser,
       });
-      todoInfo.assignedId.split(",").forEach((item) => {
+      todoInfo.assigned_id.split(",").forEach((item) => {
         todo.addUser_channel(item);
       });
       if (todo) {
         pubSub.publish("TODO", {
-          todo: { mutation: "CREATE_TODO", channelId: todo.channel_id },
+          todo: { mutation: "CREATE_TODO", data: todo, channel_id: todo.channel_id },
         });
       }
       // user_channel에 존재하지 않은 값이 들어가면 서버에서는 오류를 띄우는데 투두 테이블에는 추가가 된다. 그걸 막고 싶은데 방법이 없을까?
@@ -409,7 +409,7 @@ const resolvers = {
         && `${todo.dataValues.pet_id}` === updateTodoInfo.petId
       ) {
         pubSub.publish("TODO", {
-          todo: { mutation: "UPDATE_TODO", channelId: todo.dataValues.channel_id },
+          todo: { mutation: "UPDATE_TODO", data: todo, channel_id: todo.dataValues.channel_id },
         });
         return true;
       }
@@ -427,7 +427,7 @@ const resolvers = {
         throw new Error("삭제를 실패하였습니다.");
       }
       pubSub.publish("TODO", {
-        todo: { mutation: "DELETE_TODO", channelId: todo.dataValues.channel_id },
+        todo: { mutation: "DELETE_TODO", data: todo, channel_id: todo.dataValues.channel_id },
       });
       return true;
     },
@@ -488,7 +488,7 @@ const resolvers = {
         );
       }
       pubSub.publish("TODO", {
-        todo: { mutation: "IS_DONE_TODO", channelId: todo.dataValues.channel_id },
+        todo: { mutation: "IS_DONE_TODO", channel_id: todo.dataValues.channel_id },
       });
       return isTrue.is_done;
     },
@@ -559,7 +559,7 @@ const resolvers = {
           return pubSub.asyncIterator("TODO");
         },
         (payload, variables) => {
-          return `${payload.todo.channelId}` === variables.channelId;
+          return `${payload.todo.channel_id}` === variables.channel_id;
         },
       ),
     },

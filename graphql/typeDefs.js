@@ -132,11 +132,12 @@ const typeDefs = gql`
     dismissUser(token: String!, dismissId: ID!, channelId: ID!): Boolean!
   }
   type Subscription {
-    todo(channelId: ID!): TodoSubscription!
+    todo(channel_id: ID!): TodoSubscription!
   }
   type TodoSubscription {
     mutation: String!
-    channelId: ID!
+    data: Todo!
+    channel_id: ID!
   }
   scalar Date
 `;
