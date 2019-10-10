@@ -345,21 +345,21 @@ const resolvers = {
       return pet.name;
     },
     createTodo: async (_, { todoInfo }) => {
-      if (!todoInfo.channelId) throw new Error("channel ID 를 입력해주세요");
+      if (!todoInfo.channel_id) throw new Error("channel ID 를 입력해주세요");
       const { email } = await jwt.verify(todoInfo.token, process.env.JWT_SECRET);
       const user = await models.user.findOne({ where: { email } });
       const channelByUser = await user.getChannels().filter((item) => {
-        return `${item.dataValues.id}` === todoInfo.channelId;
+        return `${item.dataValues.id}` === todoInfo.channel_id;
       });
       const channelIdByUser = channelByUser[0].dataValues.user_channel.dataValues.id;
       const todo = await models.todo.create({
         todo: todoInfo.todo,
         memo: todoInfo.memo,
-        push_date: todoInfo.pushDate,
-        end_date: todoInfo.endDate,
-        repeat_day: todoInfo.repeatDay,
-        pet_id: todoInfo.petId,
-        channel_id: todoInfo.channelId,
+        push_date: todoInfo.push_date,
+        end_date: todoInfo.end_date,
+        repeat_day: todoInfo.repeat_day,
+        pet_id: todoInfo.pet_id,
+        channel_id: todoInfo.channel_id,
         user_channel_id: channelIdByUser,
       });
       const arrAssignedId = todoInfo.assignedId.split(",");
@@ -388,21 +388,21 @@ const resolvers = {
       return todo;
     },
     updateTodo: async (_, { updateTodoInfo }) => {
-      if (!updateTodoInfo.todoId) throw new Error("Todo ID 를 입력해주세요");
+      if (!updateTodoInfo.todo_id) throw new Error("Todo ID 를 입력해주세요");
       await jwt.verify(updateTodoInfo.token, process.env.JWT_SECRET);
       await models.todo.update(
         {
           todo: updateTodoInfo.todo,
           memo: updateTodoInfo.memo,
-          push_date: updateTodoInfo.pushDate,
-          end_date: updateTodoInfo.endDate,
-          repeat_day: updateTodoInfo.repeatDay,
-          pet_id: updateTodoInfo.petId,
+          push_date: updateTodoInfo.push_date,
+          end_date: updateTodoInfo.end_date,
+          repeat_day: updateTodoInfo.repeat_day,
+          pet_id: updateTodoInfo.pet_id,
         },
-        { where: { id: updateTodoInfo.todoId } },
+        { where: { id: updateTodoInfo.todo_id } },
       );
       const todo = await models.todo.findOne({
-        where: { id: updateTodoInfo.todoId },
+        where: { id: updateTodoInfo.todo_id },
       });
       const assinged = await todo.getUser_channels().map((item) => {
         return item.dataValues.id;
@@ -425,10 +425,10 @@ const resolvers = {
       if (
         todo.dataValues.todo === updateTodoInfo.todo
         && todo.dataValues.memo === updateTodoInfo.memo
-        // todo.dataValues.push_date === updateTodoInfo.pushDate &&
-        // todo.dataValues.end_date === updateTodoInfo.endDate &&
-        && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
-        && `${todo.dataValues.pet_id}` === updateTodoInfo.petId
+        // todo.dataValues.push_date === updateTodoInfo.push_date &&
+        // todo.dataValues.end_date === updateTodoInfo.end_date &&
+        && todo.dataValues.repeat_day === updateTodoInfo.repeat_day
+        && `${todo.dataValues.pet_id}` === updateTodoInfo.pet_id
       ) {
         pubSub.publish("TODO", {
           todo: { mutation: "UPDATE_TODO", channelId: todo.dataValues.channel_id },
