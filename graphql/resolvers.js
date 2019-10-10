@@ -124,6 +124,10 @@ const resolvers = {
   Channel: {
     users: async (channel, { id }) => {
       const users = await channel.getUsers();
+      users.forEach((item) => {
+        // eslint-disable-next-line no-param-reassign
+        item.user_channel_id = item.user_channel.dataValues.id;
+      });
       if (id) {
         return users.filter((c) => {
           return `${c.dataValues.id}` === id;
@@ -161,9 +165,6 @@ const resolvers = {
       const alarm = channel.user_channel.dataValues.set_alarm;
       return alarm;
     },
-    user_channel_id: async (channel) => {
-      return channel.user_channel.dataValues.id;
-    },
   },
   Todo: {
     assignee: async (todo) => {
@@ -194,15 +195,20 @@ const resolvers = {
     },
     complete_date: async (todo) => {
       const todos = await todo.getUser_channels();
-      const userChannelTodo = todos[0].dataValues.user_channel_todo.dataValues;
-      return userChannelTodo.complete_date;
+      const completeUser = todos.filter((item) => {
+        return item.user_channel_todo.dataValues.complete_date !== null;
+      });
+      if (completeUser.length === 0) {
+        return null;
+      }
+      const userChannelTodo = completeUser[0].user_channel_todo.dataValues.complete_date;
+      return userChannelTodo;
     },
     writer: async (todo) => {
-      const todos = await todo.getUser_channels();
-      const writerId = todos[0].dataValues.user_id;
-      const user = await models.user.findOne({
-        where: { id: writerId },
+      const userChannelData = await models.user_channel.findOne({
+        where: { id: todo.user_channel_id },
       });
+      const user = await models.user.findOne({ where: { id: userChannelData.dataValues.user_id } });
       return user;
     },
   },
