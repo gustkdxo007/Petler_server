@@ -1,6 +1,7 @@
 import { PubSub, withFilter } from "apollo-server-express";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import schedule from "node-schedule";
 import models from "../models";
 import hash from "../auth/hash";
 
@@ -109,7 +110,6 @@ const resolvers = {
       return user;
     },
   },
-
   User: {
     channels: async (user, { id }) => {
       const channels = await user.getChannels();
@@ -217,7 +217,6 @@ const resolvers = {
       return todos;
     },
   },
-
   Mutation: {
     signUp: async (_, { userInfo }) => {
       const signed = await models.user.findOne({
@@ -363,13 +362,27 @@ const resolvers = {
         channel_id: todoInfo.channel_id,
         user_channel_id: channelIdByUser,
       });
-      todoInfo.assignedId.split(",").forEach((item) => {
+      const arrAssignedId = todoInfo.assignedId.split(",");
+      arrAssignedId.forEach((item) => {
         todo.addUser_channel(item);
+      });
+      arrAssignedId.forEach(async (item) => {
+        const userChannel = await models.user_channel.findOne({ where: { id: item } });
+        const assignedUser = await models.user.findOne({
+          where: { id: userChannel.dataValues.user_id },
+        });
+        console.log(assignedUser.dataValues);
+        console.log(todo.dataValues); // FCM서버로 보내는 로직 추후 작성
       });
       if (todo) {
         pubSub.publish("TODO", {
-          todo: { mutation: "CREATE_TODO", channelId: todo.channel_id },
+          todo: { mutation: "CREATE_TODO", data: todo, channelId: todo.channel_id },
         });
+        if (todo.dataValues.push_date) {
+          schedule.scheduleJob(`todo${todo.dataValues.id}`, todo.dataValues.push_date, () => {
+            console.log(todo.dataValues.todo); // FCM서버로 보내는 로직 추후 작성
+          });
+        }
       }
       // user_channel에 존재하지 않은 값이 들어가면 서버에서는 오류를 띄우는데 투두 테이블에는 추가가 된다. 그걸 막고 싶은데 방법이 없을까?
       return todo;
@@ -394,10 +407,19 @@ const resolvers = {
       const assinged = await todo.getUser_channels().map((item) => {
         return item.dataValues.id;
       });
-      if (assinged.join() !== updateTodoInfo.assigned_id) {
-        await models.user_channel_todo.destroy({ where: { todo_id: updateTodoInfo.todo_id } });
-        updateTodoInfo.assigned_id.split(",").forEach((item) => {
+      if (assinged.join() !== updateTodoInfo.assignedId) {
+        await models.user_channel_todo.destroy({ where: { todo_id: updateTodoInfo.todoId } });
+        const arrAssignedId = updateTodoInfo.assignedId.split(",");
+        arrAssignedId.forEach((item) => {
           todo.addUser_channel(item);
+        });
+        arrAssignedId.forEach(async (item) => {
+          const userChannel = await models.user_channel.findOne({ where: { id: item } });
+          const assignedUser = await models.user.findOne({
+            where: { id: userChannel.dataValues.user_id },
+          });
+          console.log(assignedUser.dataValues);
+          console.log(todo.dataValues); // FCM서버로 보내는 로직 추후 작성
         });
       }
       if (
@@ -411,6 +433,15 @@ const resolvers = {
         pubSub.publish("TODO", {
           todo: { mutation: "UPDATE_TODO", channelId: todo.dataValues.channel_id },
         });
+        if (schedule.scheduledJobs[`todo${todo.dataValues.id}`]) {
+          schedule.scheduledJobs[`todo${todo.dataValues.id}`].cancel();
+        }
+        if (todo.dataValues.push_date) {
+          schedule.scheduleJob(`todo${todo.dataValues.id}`, todo.dataValues.push_date, () => {
+            console.log(todo.dataValues.todo);
+            console.log(todo.dataValues.push_date); // FCM서버로 보내는 로직 추후 작성
+          });
+        }
         return true;
       }
       return false;
@@ -429,6 +460,9 @@ const resolvers = {
       pubSub.publish("TODO", {
         todo: { mutation: "DELETE_TODO", channelId: todo.dataValues.channel_id },
       });
+      if (schedule.scheduledJobs[`todo${todo.dataValues.id}`]) {
+        schedule.scheduledJobs[`todo${todo.dataValues.id}`].cancel();
+      }
       return true;
     },
     updateAlarm: async (_, { token, channelId }) => {
