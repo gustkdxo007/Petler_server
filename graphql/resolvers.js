@@ -167,26 +167,31 @@ const resolvers = {
     },
   },
   Todo: {
-    assignee: async (todo) => {
+    // assignee: async (todo) => {
+    //   const userChannel = await todo.getUser_channels();
+    //   const userId = userChannel.map((v) => {
+    //     return v.dataValues.user_id;
+    //   });
+    //   const users = [];
+    //   return Promise.all(
+    //     userId.map((v) => {
+    //       return models.user.findOne({ where: { id: v } });
+    //     }),
+    //   )
+    //     .then((values) => {
+    //       values.forEach((u) => {
+    //         users.push(u.dataValues);
+    //       });
+    //       return users;
+    //     })
+    //     .catch((err) => {
+    //       console.log(err);
+    //     });
+    // },
+    assigned_id: async (todo) => {
       const userChannel = await todo.getUser_channels();
-      const userId = userChannel.map((v) => {
-        return v.dataValues.user_id;
-      });
-      const users = [];
-      return Promise.all(
-        userId.map((v) => {
-          return models.user.findOne({ where: { id: v } });
-        }),
-      )
-        .then((values) => {
-          values.forEach((u) => {
-            users.push(u.dataValues);
-          });
-          return users;
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+      const userId = userChannel[0].dataValues.id;
+      return userId;
     },
     pets: async (todo) => {
       const todos = await todo.getPet();
