@@ -1,12 +1,15 @@
 import express from "express";
 import { createServer } from "http";
 import { ApolloServer } from "apollo-server-express";
+import schedule from "node-schedule";
 import sequelize from "./models";
 
 import typeDefs from "./graphql/typeDefs";
 import resolvers from "./graphql/resolvers";
+import repeatTodo from "./helpFuncs/repeatTodo";
 
 const PORT = 4000;
+schedule.scheduleJob({ hour: 0, minute: 0 }, repeatTodo);
 
 const server = new ApolloServer({ typeDefs, resolvers });
 const app = express();

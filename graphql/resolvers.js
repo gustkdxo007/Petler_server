@@ -15,6 +15,9 @@ const resolvers = {
     //       [Op.or]: [{ email }, { id }],
     //     },
     //   });
+    //    if (!user) {
+    //        throw new Error("찾는 유저가 없습니다.");
+    //      }
     //   const channel = await user.getChannels().map((item) => {
     //     return item.dataValues;
     //   });
@@ -360,8 +363,7 @@ const resolvers = {
         channel_id: todoInfo.channel_id,
         user_channel_id: channelIdByUser,
       });
-
-      todoInfo.assigned_id.split(",").forEach((item) => {
+      todoInfo.assignedId.split(",").forEach((item) => {
         todo.addUser_channel(item);
       });
       if (todo) {
@@ -429,10 +431,32 @@ const resolvers = {
       });
       return true;
     },
+    updateAlarm: async (_, { token, channelId }) => {
+      const { email } = await jwt.verify(token, process.env.JWT_SECRET);
+      const user = await models.user.findOne({
+        where: { email },
+      });
+      const channel = await user.getChannels().filter((item) => {
+        return `${item.dataValues.id}` === channelId;
+      });
+      const alarm = channel[0].user_channel.dataValues.set_alarm;
+      const ID = channel[0].user_channel.dataValues.id;
+      await models.user_channel.update(
+        {
+          set_alarm: !alarm,
+        },
+        { where: { id: ID } },
+      );
+      const result = await models.user_channel.findOne({
+        where: {
+          id: ID,
+        },
+      });
+      return alarm === result.dataValues.set_alarm;
+    },
     isDoneTodo: async (_, { token, id }) => {
       const { email } = await jwt.verify(token, process.env.JWT_SECRET);
       const { dataValues } = await models.user.findOne({ where: { email } });
-
       const todo = await models.todo.findOne({ where: { id } });
       if (!todo) {
         throw new Error("해당 todo 가 존재하지 않습니다");
