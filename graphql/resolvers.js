@@ -1,6 +1,7 @@
 import { PubSub, withFilter } from "apollo-server-express";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import schedule from "node-schedule";
 import models from "../models";
 import hash from "../auth/hash";
 
@@ -109,7 +110,6 @@ const resolvers = {
       return user;
     },
   },
-
   User: {
     channels: async (user, { id }) => {
       const channels = await user.getChannels();
@@ -217,7 +217,6 @@ const resolvers = {
       return todos;
     },
   },
-
   Mutation: {
     signUp: async (_, { userInfo }) => {
       const signed = await models.user.findOne({
@@ -346,71 +345,103 @@ const resolvers = {
       return pet.name;
     },
     createTodo: async (_, { todoInfo }) => {
-      if (!todoInfo.channelId) throw new Error("channel ID 를 입력해주세요");
+      if (!todoInfo.channel_id) throw new Error("channel ID 를 입력해주세요");
       const { email } = await jwt.verify(todoInfo.token, process.env.JWT_SECRET);
       const user = await models.user.findOne({ where: { email } });
       const channelByUser = await user.getChannels().filter((item) => {
-        return `${item.dataValues.id}` === todoInfo.channelId;
+        return `${item.dataValues.id}` === todoInfo.channel_id;
       });
       const channelIdByUser = channelByUser[0].dataValues.user_channel.dataValues.id;
       const todo = await models.todo.create({
         todo: todoInfo.todo,
         memo: todoInfo.memo,
-        push_date: todoInfo.pushDate,
-        end_date: todoInfo.endDate,
-        repeat_day: todoInfo.repeatDay,
-        pet_id: todoInfo.petId,
-        channel_id: todoInfo.channelId,
+        push_date: todoInfo.push_date,
+        end_date: todoInfo.end_date,
+        repeat_day: todoInfo.repeat_day,
+        pet_id: todoInfo.pet_id,
+        channel_id: todoInfo.channel_id,
         user_channel_id: channelIdByUser,
       });
-      todoInfo.assigned_id.split(",").forEach((item) => {
+      const arrAssignedId = todoInfo.assigned_id.split(",");
+      arrAssignedId.forEach((item) => {
         todo.addUser_channel(item);
+      });
+      arrAssignedId.forEach(async (item) => {
+        const userChannel = await models.user_channel.findOne({ where: { id: item } });
+        const assignedUser = await models.user.findOne({
+          where: { id: userChannel.dataValues.user_id },
+        });
+        console.log(assignedUser.dataValues);
+        console.log(todo.dataValues); // FCM서버로 보내는 로직 추후 작성
       });
       if (todo) {
         pubSub.publish("TODO", {
           todo: { mutation: "CREATE_TODO", data: todo, channel_id: todo.channel_id },
         });
+        if (todo.dataValues.push_date) {
+          schedule.scheduleJob(`todo${todo.dataValues.id}`, todo.dataValues.push_date, () => {
+            console.log(todo.dataValues.todo); // FCM서버로 보내는 로직 추후 작성
+          });
+        }
       }
       // user_channel에 존재하지 않은 값이 들어가면 서버에서는 오류를 띄우는데 투두 테이블에는 추가가 된다. 그걸 막고 싶은데 방법이 없을까?
       return todo;
     },
     updateTodo: async (_, { updateTodoInfo }) => {
-      if (!updateTodoInfo.todoId) throw new Error("Todo ID 를 입력해주세요");
+      if (!updateTodoInfo.todo_id) throw new Error("Todo ID 를 입력해주세요");
       await jwt.verify(updateTodoInfo.token, process.env.JWT_SECRET);
       await models.todo.update(
         {
           todo: updateTodoInfo.todo,
           memo: updateTodoInfo.memo,
-          push_date: updateTodoInfo.pushDate,
-          end_date: updateTodoInfo.endDate,
-          repeat_day: updateTodoInfo.repeatDay,
-          pet_id: updateTodoInfo.petId,
+          push_date: updateTodoInfo.push_date,
+          end_date: updateTodoInfo.end_date,
+          repeat_day: updateTodoInfo.repeat_day,
+          pet_id: updateTodoInfo.pet_id,
         },
-        { where: { id: updateTodoInfo.todoId } },
+        { where: { id: updateTodoInfo.todo_id } },
       );
       const todo = await models.todo.findOne({
-        where: { id: updateTodoInfo.todoId },
+        where: { id: updateTodoInfo.todo_id },
       });
       const assinged = await todo.getUser_channels().map((item) => {
         return item.dataValues.id;
       });
       if (assinged.join() !== updateTodoInfo.assignedId) {
         await models.user_channel_todo.destroy({ where: { todo_id: updateTodoInfo.todoId } });
-        updateTodoInfo.assignedId.split(",").forEach((item) => {
+        const arrAssignedId = updateTodoInfo.assignedId.split(",");
+        arrAssignedId.forEach((item) => {
           todo.addUser_channel(item);
+        });
+        arrAssignedId.forEach(async (item) => {
+          const userChannel = await models.user_channel.findOne({ where: { id: item } });
+          const assignedUser = await models.user.findOne({
+            where: { id: userChannel.dataValues.user_id },
+          });
+          console.log(assignedUser.dataValues);
+          console.log(todo.dataValues); // FCM서버로 보내는 로직 추후 작성
         });
       }
       if (
         todo.dataValues.todo === updateTodoInfo.todo
         && todo.dataValues.memo === updateTodoInfo.memo
-        // todo.dataValues.push_date === updateTodoInfo.pushDate &&
-        // todo.dataValues.end_date === updateTodoInfo.endDate &&
-        && todo.dataValues.repeat_day === updateTodoInfo.repeatDay
-        && `${todo.dataValues.pet_id}` === updateTodoInfo.petId
+        // todo.dataValues.push_date === updateTodoInfo.push_date &&
+        // todo.dataValues.end_date === updateTodoInfo.end_date &&
+        && todo.dataValues.repeat_day === updateTodoInfo.repeat_day
+        && `${todo.dataValues.pet_id}` === updateTodoInfo.pet_id
       ) {
         pubSub.publish("TODO", {
           todo: { mutation: "UPDATE_TODO", data: todo, channel_id: todo.dataValues.channel_id },
         });
+        if (schedule.scheduledJobs[`todo${todo.dataValues.id}`]) {
+          schedule.scheduledJobs[`todo${todo.dataValues.id}`].cancel();
+        }
+        if (todo.dataValues.push_date) {
+          schedule.scheduleJob(`todo${todo.dataValues.id}`, todo.dataValues.push_date, () => {
+            console.log(todo.dataValues.todo);
+            console.log(todo.dataValues.push_date); // FCM서버로 보내는 로직 추후 작성
+          });
+        }
         return true;
       }
       return false;
@@ -429,6 +460,9 @@ const resolvers = {
       pubSub.publish("TODO", {
         todo: { mutation: "DELETE_TODO", data: todo, channel_id: todo.dataValues.channel_id },
       });
+      if (schedule.scheduledJobs[`todo${todo.dataValues.id}`]) {
+        schedule.scheduledJobs[`todo${todo.dataValues.id}`].cancel();
+      }
       return true;
     },
     updateAlarm: async (_, { token, channelId }) => {
