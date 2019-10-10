@@ -7,6 +7,7 @@ const typeDefs = gql`
     email: String!
     img: String!
     channels(id: ID): [Channel!]!
+    user_channel_id: ID
   }
   type Channel {
     id: ID!
@@ -17,7 +18,6 @@ const typeDefs = gql`
     todos(id: ID): [Todo!]!
     checkUser(email: String!): Boolean!
     setAlarm: Boolean!
-    user_channel_id: ID!
   }
   type Token {
     token: String!
