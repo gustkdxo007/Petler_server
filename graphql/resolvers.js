@@ -362,7 +362,7 @@ const resolvers = {
         channel_id: todoInfo.channel_id,
         user_channel_id: channelIdByUser,
       });
-      const arrAssignedId = todoInfo.assignedId.split(",");
+      const arrAssignedId = todoInfo.assigned_id.split(",");
       arrAssignedId.forEach((item) => {
         todo.addUser_channel(item);
       });
@@ -376,7 +376,7 @@ const resolvers = {
       });
       if (todo) {
         pubSub.publish("TODO", {
-          todo: { mutation: "CREATE_TODO", data: todo, channelId: todo.channel_id },
+          todo: { mutation: "CREATE_TODO", data: todo, channel_id: todo.channel_id },
         });
         if (todo.dataValues.push_date) {
           schedule.scheduleJob(`todo${todo.dataValues.id}`, todo.dataValues.push_date, () => {
@@ -431,7 +431,7 @@ const resolvers = {
         && `${todo.dataValues.pet_id}` === updateTodoInfo.pet_id
       ) {
         pubSub.publish("TODO", {
-          todo: { mutation: "UPDATE_TODO", channelId: todo.dataValues.channel_id },
+          todo: { mutation: "UPDATE_TODO", data: todo, channel_id: todo.dataValues.channel_id },
         });
         if (schedule.scheduledJobs[`todo${todo.dataValues.id}`]) {
           schedule.scheduledJobs[`todo${todo.dataValues.id}`].cancel();
@@ -458,7 +458,7 @@ const resolvers = {
         throw new Error("삭제를 실패하였습니다.");
       }
       pubSub.publish("TODO", {
-        todo: { mutation: "DELETE_TODO", channelId: todo.dataValues.channel_id },
+        todo: { mutation: "DELETE_TODO", data: todo, channel_id: todo.dataValues.channel_id },
       });
       if (schedule.scheduledJobs[`todo${todo.dataValues.id}`]) {
         schedule.scheduledJobs[`todo${todo.dataValues.id}`].cancel();
@@ -522,7 +522,7 @@ const resolvers = {
         );
       }
       pubSub.publish("TODO", {
-        todo: { mutation: "IS_DONE_TODO", channelId: todo.dataValues.channel_id },
+        todo: { mutation: "IS_DONE_TODO", channel_id: todo.dataValues.channel_id },
       });
       return isTrue.is_done;
     },
@@ -593,7 +593,7 @@ const resolvers = {
           return pubSub.asyncIterator("TODO");
         },
         (payload, variables) => {
-          return `${payload.todo.channelId}` === variables.channelId;
+          return `${payload.todo.channel_id}` === variables.channel_id;
         },
       ),
     },
