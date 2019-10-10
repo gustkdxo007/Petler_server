@@ -86,15 +86,15 @@ const typeDefs = gql`
   "create할때는 channelID를 꼭 입력해주시고, update 할때는 todoId를 꼭 입력해주세요"
   input TodoInfo {
     token: String!
-    todoId: ID
+    todo_id: ID
     todo: String!
     memo: String
-    pushDate: Date
-    endDate: Date
-    repeatDay: String
-    petId: ID!
-    channelId: ID
-    assignedId: ID!
+    push_date: Date
+    end_date: Date
+    repeat_day: String
+    pet_id: ID!
+    channel_id: ID
+    assigned_id: ID!
   }
   type Query {
     "user는 email로 찾거나 id로 찾거나 둘 중 하나만 하면 됩니다. 혹시 두개다 입력하게 되면 or 문이 적용되기 때문에 꼭 동일한 유저정보를 넣어야 합니다."
