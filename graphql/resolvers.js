@@ -413,9 +413,9 @@ const resolvers = {
       const assinged = await todo.getUser_channels().map((item) => {
         return item.dataValues.id;
       });
-      if (assinged.join() !== updateTodoInfo.assignedId) {
-        await models.user_channel_todo.destroy({ where: { todo_id: updateTodoInfo.todoId } });
-        const arrAssignedId = updateTodoInfo.assignedId.split(",");
+      if (assinged.join() !== updateTodoInfo.assigned_id) {
+        await models.user_channel_todo.destroy({ where: { todo_id: updateTodoInfo.todo_id } });
+        const arrAssignedId = updateTodoInfo.assigned_id.split(",");
         arrAssignedId.forEach((item) => {
           todo.addUser_channel(item);
         });
@@ -528,7 +528,7 @@ const resolvers = {
         );
       }
       pubSub.publish("TODO", {
-        todo: { mutation: "IS_DONE_TODO", channel_id: todo.dataValues.channel_id },
+        todo: { mutation: "IS_DONE_TODO", data: isTrue, channel_id: todo.dataValues.channel_id },
       });
       return isTrue.is_done;
     },
