@@ -46,7 +46,7 @@ const typeDefs = gql`
     repeat_day: String
     is_done: Boolean!
     pets: Pet!
-    assignee: [User!]!
+    assigned_id: ID!
     complete_date: Date
     writer: User!
   }
